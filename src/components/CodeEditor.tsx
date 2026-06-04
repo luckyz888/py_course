@@ -1,7 +1,7 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import Editor from '@monaco-editor/react';
 import { Play, Loader2, Terminal, X } from 'lucide-react';
-import { runPython, isPyodideLoaded, loadPyodide } from '../utils/pyodide';
+import { runPython, isPyodideLoaded, loadPyodide, onStatusChange } from '../utils/pyodide';
 
 interface CodeEditorProps {
   code: string;
@@ -18,8 +18,24 @@ export default function CodeEditor({ code, onCodeChange, height = '350px', datas
   const [pyodideState, setPyodideState] = useState<'idle' | 'loading' | 'ready'>(
     isPyodideLoaded() ? 'ready' : 'idle'
   );
-  const [showOutput, setShowOutput] = useState(false);
+  const [loadingStatus, setLoadingStatus] = useState('');
+  const [runCount, setRunCount] = useState(0);
   const editorRef = useRef<any>(null);
+
+  // 监听 Pyodide 加载状态
+  useEffect(() => {
+    const cleanup = onStatusChange((status) => {
+      setLoadingStatus(status);
+      if (status === '就绪') {
+        setPyodideState('ready');
+      } else if (status === '加载失败') {
+        setPyodideState('idle');
+      } else {
+        setPyodideState('loading');
+      }
+    });
+    return cleanup;
+  }, []);
 
   const handleEditorMount = (editor: any) => {
     editorRef.current = editor;
@@ -48,7 +64,7 @@ export default function CodeEditor({ code, onCodeChange, height = '350px', datas
     setOutput('');
     setError(null);
     setImages([]);
-    setShowOutput(true);
+    setRunCount((c) => c + 1);
 
     try {
       const ok = await ensurePyodide();
@@ -78,47 +94,78 @@ export default function CodeEditor({ code, onCodeChange, height = '350px', datas
     }
   };
 
+  // 快捷键：Ctrl+Enter 运行
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        handleRun();
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [handleRun, code]);
+
+  const handleClear = () => {
+    setOutput('');
+    setError(null);
+    setImages([]);
+  };
+
+  const hasOutput = output || error || images.length > 0;
+
   return (
-    <div className="flex flex-col border border-gray-200 rounded-lg overflow-hidden bg-white">
+    <div className="flex flex-col border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm">
       {/* 工具栏 */}
       <div className="flex items-center justify-between px-4 py-2 bg-gray-800 text-white shrink-0">
-        <div className="flex items-center gap-2">
-          <Terminal size={14} className="text-amber-400" />
-          <span className="text-sm font-medium">Python 控制台</span>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <Terminal size={14} className="text-amber-400" />
+            <span className="text-sm font-medium">Python 控制台</span>
+          </div>
           {pyodideState === 'loading' && (
-            <span className="text-xs text-amber-300 flex items-center gap-1">
+            <div className="flex items-center gap-2 text-xs text-amber-300">
               <Loader2 size={12} className="animate-spin" />
-              加载Python环境...
-            </span>
+              <span>{loadingStatus || '加载中...'}</span>
+            </div>
           )}
           {pyodideState === 'ready' && (
-            <span className="text-xs text-emerald-400">● 就绪</span>
+            <span className="flex items-center gap-1.5 text-xs text-emerald-400">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              就绪
+            </span>
+          )}
+          {pyodideState === 'idle' && (
+            <span className="text-xs text-gray-400">点击运行自动加载环境</span>
           )}
         </div>
-        <div className="flex gap-2">
-          <button
-            onClick={() => {
-              setOutput('');
-              setError(null);
-              setImages([]);
-              setShowOutput(false);
-            }}
-            className="flex items-center gap-1 px-3 py-1 text-sm bg-gray-700 hover:bg-gray-600 rounded transition-colors"
-          >
-            <X size={14} />
-            清空输出
-          </button>
+        <div className="flex items-center gap-2">
+          {hasOutput && (
+            <button
+              onClick={handleClear}
+              className="flex items-center gap-1 px-2.5 py-1 text-xs bg-gray-700 hover:bg-gray-600 rounded transition-colors"
+              title="清空输出"
+            >
+              <X size={12} />
+              清空
+            </button>
+          )}
           <button
             onClick={handleRun}
             disabled={isRunning || pyodideState === 'loading'}
-            className="flex items-center gap-1.5 px-4 py-1.5 text-sm font-semibold bg-amber-500 hover:bg-amber-400 disabled:opacity-50 disabled:cursor-not-allowed rounded transition-colors"
+            className="flex items-center gap-1.5 px-4 py-1.5 text-sm font-semibold bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed rounded transition-colors shadow-sm"
           >
             {isRunning ? (
-              <Loader2 size={14} className="animate-spin" />
+              <>
+                <Loader2 size={14} className="animate-spin" />
+                运行中...
+              </>
             ) : (
-              <Play size={14} />
+              <>
+                <Play size={14} />
+                运行
+              </>
             )}
-            {isRunning ? '运行中...' : '运行代码'}
           </button>
         </div>
       </div>
@@ -141,43 +188,62 @@ export default function CodeEditor({ code, onCodeChange, height = '350px', datas
             tabSize: 4,
             wordWrap: 'on',
             padding: { top: 12 },
+            suggestOnTriggerCharacters: true,
+            quickSuggestions: true,
           }}
         />
       </div>
 
-      {/* 输出区域 */}
-      {showOutput && (
-        <div className="border-t border-gray-300">
-          <div className="px-4 py-1.5 bg-gray-100 text-xs font-semibold text-gray-500 uppercase tracking-wider flex items-center justify-between">
+      {/* 输出区域 - 始终显示 */}
+      <div className="border-t border-gray-300">
+        <div className="px-4 py-1.5 bg-gray-100 text-xs font-semibold text-gray-500 uppercase tracking-wider flex items-center justify-between">
+          <div className="flex items-center gap-2">
             <span>输出结果</span>
-            {isRunning && (
-              <span className="text-amber-600 flex items-center gap-1 normal-case">
-                <Loader2 size={10} className="animate-spin" />
-                执行中...
+            {runCount > 0 && (
+              <span className="text-gray-400 normal-case font-normal">
+                第 {runCount} 次运行
               </span>
             )}
           </div>
-          <div className="p-4 bg-gray-50 max-h-[300px] overflow-y-auto">
-            {!output && !error && images.length === 0 && !isRunning && (
-              <p className="text-sm text-gray-400 italic">点击"运行代码"查看结果</p>
-            )}
-            {output && (
-              <pre className="text-sm text-gray-800 whitespace-pre-wrap font-mono leading-relaxed">{output}</pre>
-            )}
-            {error && (
-              <pre className="text-sm text-red-500 whitespace-pre-wrap font-mono leading-relaxed mt-2">{error}</pre>
-            )}
-            {images.map((img, i) => (
+          {isRunning && (
+            <span className="text-amber-600 flex items-center gap-1 normal-case">
+              <Loader2 size={10} className="animate-spin" />
+              执行中...
+            </span>
+          )}
+        </div>
+        <div className="p-4 bg-gray-50 min-h-[80px] max-h-[300px] overflow-y-auto">
+          {!hasOutput && !isRunning && (
+            <div className="text-sm text-gray-400 flex items-center gap-2">
+              <Play size={14} />
+              <span>点击「运行」或按 Ctrl+Enter 执行代码</span>
+            </div>
+          )}
+          {isRunning && !hasOutput && (
+            <div className="text-sm text-gray-400 flex items-center gap-2">
+              <Loader2 size={14} className="animate-spin" />
+              <span>正在执行代码...</span>
+            </div>
+          )}
+          {output && (
+            <pre className="text-sm text-gray-800 whitespace-pre-wrap font-mono leading-relaxed">{output}</pre>
+          )}
+          {error && (
+            <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <pre className="text-sm text-red-600 whitespace-pre-wrap font-mono leading-relaxed">{error}</pre>
+            </div>
+          )}
+          {images.map((img, i) => (
+            <div key={i} className="mt-3">
               <img
-                key={i}
                 src={`data:image/png;base64,${img}`}
                 alt={`图表输出 ${i + 1}`}
-                className="max-w-full mt-3 rounded border border-gray-200 shadow-sm"
+                className="max-w-full rounded border border-gray-200 shadow-sm"
               />
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
-      )}
+      </div>
     </div>
   );
 }

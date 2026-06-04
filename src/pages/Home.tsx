@@ -3,10 +3,10 @@ import { Link } from 'react-router-dom';
 import { BookOpen, Trophy, PlayCircle, Flame, CheckCircle2, ArrowRight, Sparkles, Code2, Zap } from 'lucide-react';
 
 const stats = [
-  { value: 6, label: '课程模块', suffix: '' },
-  { value: 29, label: '章节', suffix: '' },
-  { value: 100, label: '知识点', suffix: '+' },
-  { value: 50, label: '练习题', suffix: '+' },
+  { value: 6, label: '课程模块', suffix: '', gradient: 'from-indigo-50 to-blue-50', textColor: 'text-indigo-600', subColor: 'text-indigo-400' },
+  { value: 29, label: '章节', suffix: '', gradient: 'from-emerald-50 to-teal-50', textColor: 'text-emerald-600', subColor: 'text-emerald-400' },
+  { value: 100, label: '知识点', suffix: '+', gradient: 'from-amber-50 to-orange-50', textColor: 'text-amber-600', subColor: 'text-amber-400' },
+  { value: 50, label: '练习题', suffix: '+', gradient: 'from-rose-50 to-pink-50', textColor: 'text-rose-600', subColor: 'text-rose-400' },
 ];
 
 const modules = [
@@ -89,60 +89,64 @@ export default function Home() {
         {stats.map((stat) => (
           <div
             key={stat.label}
-            className="bg-white rounded-xl p-5 text-center shadow-sm border border-gray-100 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
+            className={`bg-gradient-to-br ${stat.gradient} rounded-xl p-5 text-center shadow-sm border border-white/50 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200`}
           >
-            <div className="text-3xl font-bold text-[#1e1b4b]">
+            <div className={`text-3xl font-bold ${stat.textColor}`}>
               <AnimatedNumber target={stat.value} suffix={stat.suffix} />
             </div>
-            <div className="mt-1 text-sm text-gray-500">{stat.label}</div>
+            <div className={`mt-1 text-sm ${stat.subColor}`}>{stat.label}</div>
           </div>
         ))}
       </section>
 
       {/* Learning Progress */}
-      <section className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 animate-fade-in">
-        <h2 className="text-lg font-bold text-[#1e1b4b] mb-4">学习进度概览</h2>
-        {allZeroProgress ? (
-          <div className="flex flex-col items-center justify-center py-10 text-center">
-            <div className="w-16 h-16 rounded-full bg-[#f59e0b]/10 flex items-center justify-center mb-4">
-              <Sparkles className="w-8 h-8 text-[#f59e0b]" />
-            </div>
-            <p className="text-[#1e1b4b] font-semibold text-lg mb-1">开始你的学习之旅吧！</p>
-            <p className="text-sm text-gray-400 mb-4">完成知识点学习后，进度将在这里显示</p>
-            <Link
-              to="/courses"
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#f59e0b] text-white rounded-lg font-medium hover:bg-[#d97706] transition-colors"
-            >
-              <BookOpen className="w-4 h-4" />
-              前往课程中心
-            </Link>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {modules.map((mod) => (
-              <div key={mod.id} className="flex items-center gap-4">
-                <span className="w-32 text-sm text-gray-700 shrink-0">{mod.name}</span>
-                <div className="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-[#10b981] rounded-full transition-all duration-500"
-                    style={{ width: `${mod.progress}%` }}
-                  />
-                </div>
-                <span className="w-12 text-sm text-gray-500 text-right">{mod.progress}%</span>
+      <section className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden animate-fade-in">
+        <div className="bg-gradient-to-r from-indigo-500 to-violet-500 px-6 py-3">
+          <h2 className="text-lg font-bold text-white">学习进度概览</h2>
+        </div>
+        <div className="p-6">
+          {allZeroProgress ? (
+            <div className="flex flex-col items-center justify-center py-10 text-center">
+              <div className="w-16 h-16 rounded-full bg-[#f59e0b]/10 flex items-center justify-center mb-4">
+                <Sparkles className="w-8 h-8 text-[#f59e0b]" />
               </div>
-            ))}
-          </div>
-        )}
+              <p className="text-[#1e1b4b] font-semibold text-lg mb-1">开始你的学习之旅吧！</p>
+              <p className="text-sm text-gray-400 mb-4">完成知识点学习后，进度将在这里显示</p>
+              <Link
+                to="/courses"
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#f59e0b] text-white rounded-lg font-medium hover:bg-[#d97706] transition-colors"
+              >
+                <BookOpen className="w-4 h-4" />
+                前往课程中心
+              </Link>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {modules.map((mod) => (
+                <div key={mod.id} className="flex items-center gap-4">
+                  <span className="w-32 text-sm text-gray-700 shrink-0">{mod.name}</span>
+                  <div className="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-indigo-500 to-violet-500 rounded-full transition-all duration-500"
+                      style={{ width: `${mod.progress}%` }}
+                    />
+                  </div>
+                  <span className="w-12 text-sm text-gray-500 text-right">{mod.progress}%</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </section>
 
       {/* Quick Entry Cards */}
       <section className="grid grid-cols-1 md:grid-cols-3 gap-4 stagger-children">
         <Link
           to="/courses/m1"
-          className="group flex items-center gap-4 bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover:-translate-y-1 hover:shadow-lg transition-all duration-200"
+          className="group flex items-center gap-4 bg-white rounded-xl p-5 shadow-sm border border-gray-100 border-l-4 border-l-amber-400 hover:-translate-y-1 hover:shadow-lg transition-all duration-200"
         >
-          <div className="w-12 h-12 rounded-xl bg-[#f59e0b]/10 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform duration-200">
-            <PlayCircle className="w-6 h-6 text-[#f59e0b]" />
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-orange-400 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform duration-200">
+            <PlayCircle className="w-6 h-6 text-white" />
           </div>
           <div>
             <div className="font-bold text-[#1e1b4b]">继续学习</div>
@@ -152,10 +156,10 @@ export default function Home() {
 
         <Link
           to="/courses"
-          className="group flex items-center gap-4 bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover:-translate-y-1 hover:shadow-lg transition-all duration-200"
+          className="group flex items-center gap-4 bg-white rounded-xl p-5 shadow-sm border border-gray-100 border-l-4 border-l-indigo-500 hover:-translate-y-1 hover:shadow-lg transition-all duration-200"
         >
-          <div className="w-12 h-12 rounded-xl bg-[#1e1b4b]/10 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform duration-200">
-            <BookOpen className="w-6 h-6 text-[#1e1b4b]" />
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-blue-500 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform duration-200">
+            <BookOpen className="w-6 h-6 text-white" />
           </div>
           <div>
             <div className="font-bold text-[#1e1b4b]">课程中心</div>
@@ -165,10 +169,10 @@ export default function Home() {
 
         <Link
           to="/achievements"
-          className="group flex items-center gap-4 bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover:-translate-y-1 hover:shadow-lg transition-all duration-200"
+          className="group flex items-center gap-4 bg-white rounded-xl p-5 shadow-sm border border-gray-100 border-l-4 border-l-emerald-500 hover:-translate-y-1 hover:shadow-lg transition-all duration-200"
         >
-          <div className="w-12 h-12 rounded-xl bg-[#10b981]/10 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform duration-200">
-            <Trophy className="w-6 h-6 text-[#10b981]" />
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform duration-200">
+            <Trophy className="w-6 h-6 text-white" />
           </div>
           <div>
             <div className="font-bold text-[#1e1b4b]">成就中心</div>
@@ -195,10 +199,10 @@ export default function Home() {
               10个真实项目，从数据清洗到商业分析，AI教练全程陪练，边学边练快速提升
             </p>
             <div className="flex flex-wrap gap-3 mb-4">
-              <span className="px-3 py-1 bg-white/10 rounded-full text-sm">10个梯度项目</span>
-              <span className="px-3 py-1 bg-white/10 rounded-full text-sm">真实数据集</span>
-              <span className="px-3 py-1 bg-white/10 rounded-full text-sm">AI 陪练教练</span>
-              <span className="px-3 py-1 bg-white/10 rounded-full text-sm">浏览器内运行</span>
+              <span className="px-3 py-1 bg-amber-500/20 rounded-full text-sm">10个梯度项目</span>
+              <span className="px-3 py-1 bg-emerald-500/20 rounded-full text-sm">真实数据集</span>
+              <span className="px-3 py-1 bg-rose-500/20 rounded-full text-sm">AI 陪练教练</span>
+              <span className="px-3 py-1 bg-sky-500/20 rounded-full text-sm">浏览器内运行</span>
             </div>
             <Link
               to="/bootcamp"
@@ -235,8 +239,8 @@ export default function Home() {
         <h2 className="text-lg font-bold text-[#1e1b4b] mb-4">连续学习打卡</h2>
         <div className="flex items-center gap-4 sm:gap-6">
           <div className="flex items-center gap-3">
-            <div className="w-14 h-14 rounded-xl bg-[#f59e0b]/10 flex items-center justify-center">
-              <Flame className="w-7 h-7 text-[#f59e0b]" />
+            <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-orange-400 to-rose-500 flex items-center justify-center shadow-lg shadow-orange-500/20">
+              <Flame className="w-7 h-7 text-white" />
             </div>
             <div>
               <div className="text-2xl font-bold text-[#1e1b4b]">{streakDays} 天</div>
@@ -247,15 +251,15 @@ export default function Home() {
           <div className="flex items-center gap-3">
             <div
               className={`w-14 h-14 rounded-xl flex items-center justify-center ${
-                todayChecked ? 'bg-[#10b981]/10' : 'bg-gray-100'
+                todayChecked ? 'bg-gradient-to-br from-emerald-400 to-teal-500 shadow-lg shadow-emerald-500/20' : 'bg-gray-100'
               }`}
             >
               <CheckCircle2
-                className={`w-7 h-7 ${todayChecked ? 'text-[#10b981]' : 'text-gray-300'}`}
+                className={`w-7 h-7 ${todayChecked ? 'text-white' : 'text-gray-300'}`}
               />
             </div>
             <div>
-              <div className={`text-lg font-bold ${todayChecked ? 'text-[#10b981]' : 'text-gray-400'}`}>
+              <div className={`text-lg font-bold ${todayChecked ? 'text-emerald-600' : 'text-gray-400'}`}>
                 {todayChecked ? '已打卡' : '未打卡'}
               </div>
               <div className="text-sm text-gray-500">今日状态</div>

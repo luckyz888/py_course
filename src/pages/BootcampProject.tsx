@@ -1,38 +1,69 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
   BookOpen,
-  Code2,
-  CheckCircle2,
   ChevronDown,
   ChevronRight,
   Play,
-  FileCode,
   Lightbulb,
-  Upload,
+  RotateCcw,
+  CheckCircle2,
+  Database,
+  Loader2,
+  Terminal,
+  X,
+  Code2,
+  ClipboardCheck,
 } from 'lucide-react';
 import { bootcampProjects } from '../data/bootcamp';
 import { useBootcampStore } from '../stores/bootcampStore';
-import CodeEditor from '../components/CodeEditor';
+import Editor from '@monaco-editor/react';
+import { runPython, isPyodideLoaded, loadPyodide, onStatusChange } from '../utils/pyodide';
 import MarkdownRenderer from '../components/MarkdownRenderer';
-
-type TabKey = 'outline' | 'coding' | 'solution';
 
 export default function BootcampProject() {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
   const store = useBootcampStore();
-
   const project = bootcampProjects.find((p) => p.id === projectId);
 
-  const [activeTab, setActiveTab] = useState<TabKey>('outline');
-  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
-  const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
   const [editorCode, setEditorCode] = useState<string>(() => {
     if (!project) return '';
     return store.getCode(project.id) || project.starterCode;
   });
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
+  const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
+  const [showReference, setShowReference] = useState(false);
+  const [leftWidth, setLeftWidth] = useState(420);
+  const isDragging = useRef(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const handleDragStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    isDragging.current = true;
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging.current || !containerRef.current) return;
+      const containerRect = containerRef.current.getBoundingClientRect();
+      const newWidth = Math.max(280, Math.min(e.clientX - containerRect.left, containerRect.width - 400));
+      setLeftWidth(newWidth);
+    };
+
+    const handleMouseUp = () => {
+      isDragging.current = false;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  }, []);
+
   const handleCodeChange = useCallback(
     (code: string) => {
       setEditorCode(code);
@@ -41,30 +72,12 @@ export default function BootcampProject() {
     [project, store]
   );
 
-  const handleRunExample = useCallback(
-    (code: string) => {
-      setEditorCode(code);
-      if (project) store.saveCode(project.id, code);
-      setActiveTab('coding');
-    },
-    [project, store]
-  );
-
-  const handleLoadToEditor = useCallback(
-    (code: string) => {
-      setEditorCode(code);
-      if (project) store.saveCode(project.id, code);
-      setActiveTab('coding');
-    },
-    [project, store]
-  );
-
-  const toggleSection = (sectionTitle: string) => {
-    setExpandedSections((prev) => ({ ...prev, [sectionTitle]: !prev[sectionTitle] }));
+  const toggleSection = (title: string) => {
+    setExpandedSections((prev) => ({ ...prev, [title]: !prev[title] }));
   };
 
-  const toggleItem = (itemKey: string) => {
-    setExpandedItems((prev) => ({ ...prev, [itemKey]: !prev[itemKey] }));
+  const toggleItem = (key: string) => {
+    setExpandedItems((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
   if (!project) {
@@ -72,7 +85,6 @@ export default function BootcampProject() {
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
           <p className="text-lg text-gray-600 mb-2">项目未找到</p>
-          <p className="text-sm text-gray-400 mb-4">projectId: {projectId}</p>
           <button
             onClick={() => navigate('/bootcamp')}
             className="px-4 py-2 bg-indigo-900 text-white rounded-lg hover:bg-indigo-800 transition-colors"
@@ -84,278 +96,262 @@ export default function BootcampProject() {
     );
   }
 
-  const tabs: { key: TabKey; label: string; icon: React.ReactNode }[] = [
-    { key: 'outline', label: '学习大纲', icon: <BookOpen size={16} /> },
-    { key: 'coding', label: '在线编程', icon: <Code2 size={16} /> },
-    { key: 'solution', label: '参考解答', icon: <Lightbulb size={16} /> },
-  ];
-
   return (
-    <div className="flex flex-col h-full">
-      {/* 顶部导航 */}
-      <div className="flex items-center gap-3 mb-4 shrink-0">
-        <button
-          onClick={() => navigate('/bootcamp')}
-          className="flex items-center gap-1 text-sm text-gray-500 hover:text-indigo-900 transition-colors"
-        >
-          <ArrowLeft size={16} />
-          返回训练营
-        </button>
-        <span className="text-gray-300">|</span>
-        <h1 className="text-lg font-bold text-gray-900 truncate">{project.title}</h1>
-      </div>
-
-      {/* 标签栏 */}
-      <div className="flex shrink-0 border-b border-gray-200 mb-4">
-        {tabs.map((tab) => (
+    <div className="flex flex-col h-screen">
+      {/* 顶部导航栏 */}
+      <div className="flex items-center justify-between px-4 py-2 bg-white border-b border-gray-200 shrink-0">
+        <div className="flex items-center gap-3">
           <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className={`flex items-center gap-1.5 px-5 py-2.5 text-sm font-medium transition-colors ${
-              activeTab === tab.key
-                ? 'bg-indigo-900 text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            } ${tab.key === 'outline' ? 'rounded-tl-lg' : ''} ${
-              tab.key === 'solution' ? 'rounded-tr-lg' : ''
-            }`}
+            onClick={() => navigate('/bootcamp')}
+            className="flex items-center gap-1 text-sm text-gray-500 hover:text-indigo-900 transition-colors"
           >
-            {tab.icon}
-            {tab.label}
+            <ArrowLeft size={16} />
+            返回
           </button>
-        ))}
-      </div>
-
-      {/* 标签内容 */}
-      <div className="flex-1 min-h-0 overflow-y-auto">
-        {activeTab === 'outline' && (
-          <OutlineTab
-            project={project}
-            expandedSections={expandedSections}
-            expandedItems={expandedItems}
-            onToggleSection={toggleSection}
-            onToggleItem={toggleItem}
-            onRunExample={handleRunExample}
-          />
-        )}
-        {activeTab === 'coding' && (
-          <CodingTab
-            project={project}
-            code={editorCode}
-            onCodeChange={handleCodeChange}
-          />
-        )}
-        {activeTab === 'solution' && (
-          <SolutionTab
-            project={project}
-            onLoadToEditor={handleLoadToEditor}
-          />
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ==================== 学习大纲标签 ====================
-
-interface OutlineTabProps {
-  project: (typeof bootcampProjects)[number];
-  expandedSections: Record<string, boolean>;
-  expandedItems: Record<string, boolean>;
-  onToggleSection: (title: string) => void;
-  onToggleItem: (key: string) => void;
-  onRunExample: (code: string) => void;
-}
-
-function OutlineTab({
-  project,
-  expandedSections,
-  expandedItems,
-  onToggleSection,
-  onToggleItem,
-  onRunExample,
-}: OutlineTabProps) {
-  return (
-    <div className="space-y-6 pb-6">
-      {/* 项目信息头部 */}
-      <div className="bg-white rounded-xl p-6 shadow-sm">
-        <h2 className="text-xl font-bold text-gray-900 mb-2">{project.title}</h2>
-        <p className="text-gray-600 mb-4">{project.description}</p>
-        <div className="flex flex-wrap gap-2">
-          <span className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm font-medium">
+          <span className="text-gray-300">|</span>
+          <h1 className="text-base font-bold text-gray-900 truncate">{project.title}</h1>
+          <span className="px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded-full text-xs font-medium">
             {project.difficultyLabel}
           </span>
-          {project.tags.map((tag) => (
-            <span key={tag} className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-sm">
+        </div>
+        <div className="flex items-center gap-2">
+          {project.tags.slice(0, 4).map((tag) => (
+            <span key={tag} className="hidden sm:inline px-2 py-0.5 bg-gray-100 text-gray-500 rounded text-xs">
               {tag}
             </span>
           ))}
         </div>
       </div>
 
-      {/* 大纲章节 */}
-      {project.outline.map((section, si) => {
-        const sectionOpen = expandedSections[section.title] ?? false;
-        return (
-          <div key={si} className="bg-white rounded-xl shadow-sm overflow-hidden">
-            {/* 章节标题 */}
-            <button
-              onClick={() => onToggleSection(section.title)}
-              className="w-full flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors"
-            >
-              <div className="flex items-center gap-3">
-                <span className="flex items-center justify-center w-7 h-7 rounded-full bg-indigo-900 text-white text-sm font-bold">
-                  {si + 1}
-                </span>
-                <span className="font-bold text-gray-900">{section.title}</span>
-              </div>
-              {sectionOpen ? (
-                <ChevronDown size={20} className="text-gray-400" />
-              ) : (
-                <ChevronRight size={20} className="text-gray-400" />
-              )}
-            </button>
+      {/* 左右分栏主体 */}
+      <div className="flex flex-1 min-h-0" ref={containerRef}>
+        {/* 左侧：知识点大纲 */}
+        <div className="shrink-0 border-r border-gray-200 bg-gray-50 overflow-y-auto" style={{ width: leftWidth }}>
+          <KnowledgePanel
+            project={project}
+            expandedSections={expandedSections}
+            expandedItems={expandedItems}
+            onToggleSection={toggleSection}
+            onToggleItem={toggleItem}
+            onLoadCode={handleCodeChange}
+          />
+        </div>
 
-            {/* 章节内容 */}
-            {sectionOpen && (
-              <div className="border-t border-gray-100">
-                {section.items.map((item, ii) => {
-                  const itemKey = `${si}-${ii}`;
-                  const itemOpen = expandedItems[itemKey] ?? false;
-                  return (
-                    <div key={ii} className="border-b border-gray-50 last:border-b-0">
-                      {/* 知识点标题 */}
-                      <button
-                        onClick={() => onToggleItem(itemKey)}
-                        className="w-full flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors"
-                      >
-                        <div className="flex items-center gap-2">
-                          <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-                          <span className="text-sm font-medium text-gray-800">{item.title}</span>
-                        </div>
-                        {itemOpen ? (
-                          <ChevronDown size={16} className="text-gray-400" />
-                        ) : (
-                          <ChevronRight size={16} className="text-gray-400" />
-                        )}
-                      </button>
+        {/* 拖拽分割条 */}
+        <div
+          onMouseDown={handleDragStart}
+          className="w-1.5 shrink-0 bg-gray-200 hover:bg-indigo-400 cursor-col-resize transition-colors relative group"
+        >
+          <div className="absolute inset-y-0 -left-1 -right-1" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1 h-8 rounded-full bg-gray-400 group-hover:bg-indigo-500 transition-colors" />
+        </div>
 
-                      {/* 知识点详情 */}
-                      {itemOpen && (
-                        <div className="px-6 pb-4 space-y-4">
-                          {/* 知识讲解 */}
-                          <div className="pl-3.5">
-                            <MarkdownRenderer content={item.content} />
-                          </div>
-
-                          {/* 代码示例 */}
-                          {item.codeExample && (
-                            <div className="relative rounded-lg overflow-hidden">
-                              <pre className="bg-gray-900 text-green-300 p-4 pr-24 overflow-x-auto text-sm font-mono leading-relaxed">
-                                {item.codeExample}
-                              </pre>
-                              <button
-                                onClick={() => onRunExample(item.codeExample)}
-                                className="absolute top-3 right-3 flex items-center gap-1 px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-white text-xs font-medium rounded transition-colors"
-                              >
-                                <Play size={12} />
-                                运行示例
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        );
-      })}
+        {/* 右侧：代码工作台 */}
+        <div className="flex-1 flex flex-col min-w-0 bg-white">
+          <Workspace
+            project={project}
+            code={editorCode}
+            onCodeChange={handleCodeChange}
+            showReference={showReference}
+            onToggleReference={() => setShowReference(!showReference)}
+            onCloseReference={() => setShowReference(false)}
+          />
+        </div>
+      </div>
     </div>
   );
 }
 
-// ==================== 在线编程标签 ====================
+// ==================== 左侧知识点面板 ====================
 
-interface CodingTabProps {
+interface KnowledgePanelProps {
   project: (typeof bootcampProjects)[number];
-  code: string;
-  onCodeChange: (code: string) => void;
+  expandedSections: Record<string, boolean>;
+  expandedItems: Record<string, boolean>;
+  onToggleSection: (title: string) => void;
+  onToggleItem: (key: string) => void;
+  onLoadCode: (code: string) => void;
 }
 
-function CodingTab({ project, code, onCodeChange }: CodingTabProps) {
+function KnowledgePanel({
+  project,
+  expandedSections,
+  expandedItems,
+  onToggleSection,
+  onToggleItem,
+  onLoadCode,
+}: KnowledgePanelProps) {
   const store = useBootcampStore();
 
-  const handleLoadStarterCode = () => {
-    onCodeChange(project.starterCode);
+  const importanceConfig = {
+    core: { label: '核心', color: 'bg-rose-100 text-rose-700', dot: 'bg-rose-500' },
+    important: { label: '重要', color: 'bg-amber-100 text-amber-700', dot: 'bg-amber-400' },
+    supplementary: { label: '补充', color: 'bg-sky-100 text-sky-700', dot: 'bg-sky-400' },
   };
 
-  const handleLoadReference = () => {
-    onCodeChange(project.referenceSolution);
-  };
+  const sectionColors = [
+    'from-indigo-500 to-indigo-700',
+    'from-emerald-500 to-emerald-700',
+    'from-amber-500 to-amber-700',
+    'from-rose-500 to-rose-700',
+    'from-violet-500 to-violet-700',
+    'from-cyan-500 to-cyan-700',
+    'from-orange-500 to-orange-700',
+  ];
 
   return (
-    <div className="space-y-4 pb-6">
-      {/* 工具栏 */}
-      <div className="flex items-center justify-between bg-white rounded-xl px-4 py-3 shadow-sm">
-        <span className="font-bold text-gray-900">{project.title}</span>
-        <div className="flex gap-2">
-          <button
-            onClick={handleLoadStarterCode}
-            className="flex items-center gap-1 px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
-          >
-            <FileCode size={14} />
-            起始代码
-          </button>
-          <button
-            onClick={handleLoadReference}
-            className="flex items-center gap-1 px-3 py-1.5 text-sm bg-indigo-900 hover:bg-indigo-800 text-white rounded-lg transition-colors"
-          >
-            <Lightbulb size={14} />
-            参考解答
-          </button>
+    <div className="p-4 space-y-4">
+      {/* 项目简介 - 渐变卡片 */}
+      <div className="rounded-xl p-4 bg-gradient-to-br from-indigo-50 to-violet-50 border border-indigo-100">
+        <div className="flex items-center gap-2 mb-2">
+          <div className="w-6 h-6 rounded-lg bg-indigo-600 flex items-center justify-center">
+            <BookOpen size={14} className="text-white" />
+          </div>
+          <h2 className="font-bold text-indigo-900">项目简介</h2>
+        </div>
+        <p className="text-sm text-indigo-800/80 leading-relaxed">{project.description}</p>
+      </div>
+
+      {/* 数据集说明 - 绿色卡片 */}
+      <div className="rounded-xl p-4 bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-100">
+        <div className="flex items-center gap-2 mb-2">
+          <div className="w-6 h-6 rounded-lg bg-emerald-600 flex items-center justify-center">
+            <Database size={14} className="text-white" />
+          </div>
+          <h2 className="font-bold text-emerald-900">数据集</h2>
+        </div>
+        <p className="text-sm text-emerald-800/80 leading-relaxed">{project.datasetDescription}</p>
+        <div className="mt-2 px-2.5 py-1 bg-emerald-100 rounded-md inline-flex items-center gap-1">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+          <span className="text-xs text-emerald-700 font-medium">df 变量已预加载，可直接使用</span>
         </div>
       </div>
 
-      {/* 代码编辑器 + 运行控制台 */}
-      <CodeEditor
-        code={code}
-        onCodeChange={onCodeChange}
-        height="400px"
-        datasetCode={project.datasetCode}
-      />
+      {/* 学习大纲 */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between px-1">
+          <h3 className="font-bold text-gray-900">学习大纲</h3>
+          <div className="flex items-center gap-2 text-xs">
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-rose-500" />核心</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400" />重要</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-sky-400" />补充</span>
+          </div>
+        </div>
+        {project.outline.map((section, si) => {
+          const sectionOpen = expandedSections[section.title] ?? si === 0;
+          const gradient = sectionColors[si % sectionColors.length];
+          return (
+            <div key={si} className="rounded-xl overflow-hidden shadow-sm border border-gray-100">
+              <button
+                onClick={() => onToggleSection(section.title)}
+                className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50/50 transition-colors"
+              >
+                <div className="flex items-center gap-2.5">
+                  <span className={`flex items-center justify-center w-7 h-7 rounded-lg bg-gradient-to-br ${gradient} text-white text-xs font-bold shadow-sm`}>
+                    {si + 1}
+                  </span>
+                  <span className="font-semibold text-sm text-gray-900">{section.title}</span>
+                </div>
+                {sectionOpen ? (
+                  <ChevronDown size={16} className="text-gray-400" />
+                ) : (
+                  <ChevronRight size={16} className="text-gray-400" />
+                )}
+              </button>
+
+              {sectionOpen && (
+                <div className="border-t border-gray-100 bg-white">
+                  {section.items.map((item, ii) => {
+                    const itemKey = `${si}-${ii}`;
+                    const itemOpen = expandedItems[itemKey] ?? false;
+                    const imp = item.importance || 'important';
+                    const config = importanceConfig[imp];
+                    return (
+                      <div key={ii} className="border-b border-gray-50 last:border-b-0">
+                        <button
+                          onClick={() => onToggleItem(itemKey)}
+                          className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-gray-50/50 transition-colors"
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className={`w-2 h-2 rounded-full ${config.dot}`} />
+                            <span className="text-sm text-gray-800">{item.title}</span>
+                            <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${config.color}`}>
+                              {config.label}
+                            </span>
+                          </div>
+                          {itemOpen ? (
+                            <ChevronDown size={14} className="text-gray-400" />
+                          ) : (
+                            <ChevronRight size={14} className="text-gray-400" />
+                          )}
+                        </button>
+
+                        {itemOpen && (
+                          <div className="px-4 pb-3 space-y-3">
+                            <div className="pl-4 text-sm text-gray-600 leading-relaxed border-l-2 border-indigo-200">
+                              <MarkdownRenderer content={item.content} />
+                            </div>
+                            {item.codeExample && (
+                              <div className="relative rounded-lg overflow-hidden ring-1 ring-gray-200">
+                                <pre className="bg-gray-900 text-green-300 p-3 pr-20 overflow-x-auto text-xs font-mono leading-relaxed">
+                                  {item.codeExample}
+                                </pre>
+                                <button
+                                  onClick={() => onLoadCode(item.codeExample)}
+                                  className="absolute top-2 right-2 flex items-center gap-1 px-2.5 py-1 bg-emerald-500 hover:bg-emerald-400 text-white text-xs font-medium rounded-md transition-colors shadow-sm"
+                                >
+                                  <Play size={10} />
+                                  试一试
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
 
       {/* 任务列表 */}
-      <div className="bg-white rounded-xl p-4 shadow-sm">
-        <h3 className="font-bold text-gray-800 mb-3">任务列表</h3>
-        <div className="space-y-2">
+      <div className="rounded-xl p-4 bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-100">
+        <h3 className="font-bold text-amber-900 mb-3 flex items-center gap-2">
+          <div className="w-6 h-6 rounded-lg bg-amber-500 flex items-center justify-center">
+            <ClipboardCheck size={14} className="text-white" />
+          </div>
+          任务清单
+        </h3>
+        <div className="space-y-1.5">
           {project.tasks.map((task, i) => {
             const completed = store.isTaskCompleted(project.id, task.id);
             return (
               <div
                 key={task.id}
-                className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-gray-50 transition-colors"
+                className={`flex items-start gap-2 p-2 rounded-lg text-sm transition-colors ${
+                  completed ? 'bg-emerald-50/80' : 'bg-white/60 hover:bg-white'
+                }`}
               >
                 <button
-                  onClick={() => {
-                    if (!completed) store.completeTask(project.id, task.id);
-                  }}
-                  className="shrink-0"
+                  onClick={() => { if (!completed) store.completeTask(project.id, task.id); }}
+                  className="shrink-0 mt-0.5"
                 >
                   <CheckCircle2
-                    size={20}
-                    className={completed ? 'text-green-500' : 'text-gray-300'}
+                    size={16}
+                    className={completed ? 'text-emerald-500' : 'text-gray-300 hover:text-emerald-300'}
                   />
                 </button>
-                <span className="text-sm text-gray-500 w-6">{i + 1}.</span>
-                <span
-                  className={`text-sm ${
-                    completed ? 'text-gray-400 line-through' : 'text-gray-800 font-medium'
-                  }`}
-                >
-                  {task.title}
-                </span>
+                <div>
+                  <span className={completed ? 'text-gray-400 line-through' : 'text-gray-800 font-medium'}>
+                    {i + 1}. {task.title}
+                  </span>
+                  {!completed && (
+                    <p className="text-xs text-gray-500 mt-0.5">{task.description}</p>
+                  )}
+                </div>
               </div>
             );
           })}
@@ -365,47 +361,378 @@ function CodingTab({ project, code, onCodeChange }: CodingTabProps) {
   );
 }
 
-// ==================== 参考解答标签 ====================
+// ==================== 右侧代码工作台 ====================
 
-interface SolutionTabProps {
+interface WorkspaceProps {
   project: (typeof bootcampProjects)[number];
-  onLoadToEditor: (code: string) => void;
+  code: string;
+  onCodeChange: (code: string) => void;
+  showReference: boolean;
+  onToggleReference: () => void;
+  onCloseReference: () => void;
 }
 
-function SolutionTab({ project, onLoadToEditor }: SolutionTabProps) {
+function Workspace({ project, code, onCodeChange, showReference, onToggleReference, onCloseReference }: WorkspaceProps) {
+  const [output, setOutput] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [images, setImages] = useState<string[]>([]);
+  const [isRunning, setIsRunning] = useState(false);
+  const [pyodideState, setPyodideState] = useState<'idle' | 'loading' | 'ready' | 'error'>(
+    isPyodideLoaded() ? 'ready' : 'idle'
+  );
+  const [loadingStatus, setLoadingStatus] = useState('');
+  const [runCount, setRunCount] = useState(0);
+  const [activeBottomTab, setActiveBottomTab] = useState<'output' | 'tasks'>('output');
+  const [bottomHeight, setBottomHeight] = useState(240);
+  const workspaceRef = useRef<HTMLDivElement>(null);
+  const isVDragging = useRef(false);
+
+  // 监听 Pyodide 加载状态
+  useEffect(() => {
+    const cleanup = onStatusChange((status) => {
+      setLoadingStatus(status);
+      if (status === '就绪') setPyodideState('ready');
+      else if (status === '加载失败') setPyodideState('error');
+      else setPyodideState('loading');
+    });
+    return cleanup;
+  }, []);
+
+  const handleRun = async () => {
+    if (isRunning) return;
+    setIsRunning(true);
+    setOutput('');
+    setError(null);
+    setImages([]);
+    setRunCount((c) => c + 1);
+    setActiveBottomTab('output');
+
+    try {
+      // 确保 Pyodide 已加载
+      if (!isPyodideLoaded()) {
+        setPyodideState('loading');
+        setLoadingStatus('正在加载 Python 环境...');
+        await loadPyodide();
+      }
+
+      // 加载数据集
+      if (project.datasetCode) {
+        setLoadingStatus('正在加载数据集...');
+        try { await runPython(project.datasetCode); } catch {}
+      }
+
+      // 运行用户代码
+      setLoadingStatus('正在执行代码...');
+      const result = await runPython(code);
+      setOutput(result.output);
+      setError(result.error);
+      setImages(result.images);
+    } catch (err: any) {
+      setError(err.message || '运行出错');
+      if (!isPyodideLoaded()) setPyodideState('error');
+    } finally {
+      setIsRunning(false);
+    }
+  };
+
+  const handleReset = () => {
+    onCodeChange(project.starterCode);
+    setOutput('');
+    setError(null);
+    setImages([]);
+  };
+
+  const handleLoadReference = () => {
+    onCodeChange(project.referenceSolution);
+    onCloseReference();
+  };
+
+  // 垂直拖拽：调节编辑器和输出面板的高度
+  const handleVDragStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    isVDragging.current = true;
+    document.body.style.cursor = 'row-resize';
+    document.body.style.userSelect = 'none';
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isVDragging.current || !workspaceRef.current) return;
+      const rect = workspaceRef.current.getBoundingClientRect();
+      const newHeight = Math.max(100, Math.min(rect.bottom - e.clientY, rect.height - 150));
+      setBottomHeight(newHeight);
+    };
+
+    const handleMouseUp = () => {
+      isVDragging.current = false;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  }, []);
+
+  // Ctrl+Enter 快捷键
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        handleRun();
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [handleRun, code]);
+
+  const hasOutput = output || error || images.length > 0;
+
   return (
-    <div className="space-y-6 pb-6">
-      {/* 参考解答代码 */}
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <h3 className="font-bold text-gray-800">参考解答</h3>
+    <div className="flex flex-col h-full" ref={workspaceRef}>
+      {/* 工具栏 */}
+      <div className="flex items-center justify-between px-3 py-2 bg-gray-800 text-white shrink-0">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <Code2 size={14} className="text-amber-400" />
+            <span className="text-sm font-medium">工作台</span>
+          </div>
+          {pyodideState === 'loading' && (
+            <span className="text-xs text-amber-300 flex items-center gap-1">
+              <Loader2 size={11} className="animate-spin" />
+              {loadingStatus || '加载中...'}
+            </span>
+          )}
+          {pyodideState === 'ready' && (
+            <span className="flex items-center gap-1 text-xs text-emerald-400">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+              就绪
+            </span>
+          )}
+          {pyodideState === 'error' && (
+            <span className="text-xs text-red-400">加载失败</span>
+          )}
+          {pyodideState === 'idle' && (
+            <span className="text-xs text-gray-400">点击运行加载环境</span>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
           <button
-            onClick={() => onLoadToEditor(project.referenceSolution)}
-            className="flex items-center gap-1.5 px-4 py-2 bg-indigo-900 hover:bg-indigo-800 text-white text-sm font-medium rounded-lg transition-colors"
+            onClick={handleReset}
+            className="flex items-center gap-1 px-3 py-1 text-xs bg-gray-700 hover:bg-gray-600 rounded transition-colors"
           >
-            <Upload size={14} />
-            加载到编辑器
+            <RotateCcw size={12} />
+            重置代码
+          </button>
+          <button
+            onClick={onToggleReference}
+            className={`flex items-center gap-1 px-3 py-1 text-xs rounded transition-colors ${
+              showReference ? 'bg-amber-500 text-white' : 'bg-gray-700 hover:bg-gray-600'
+            }`}
+          >
+            <Lightbulb size={12} />
+            参考答案
+          </button>
+          <button
+            onClick={() => setActiveBottomTab('tasks')}
+            className="flex items-center gap-1 px-3 py-1 text-xs bg-gray-700 hover:bg-gray-600 rounded transition-colors"
+          >
+            <ClipboardCheck size={12} />
+            任务
+          </button>
+          <button
+            onClick={handleRun}
+            disabled={isRunning}
+            className="flex items-center gap-1.5 px-4 py-1.5 text-sm font-semibold bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed rounded transition-colors"
+          >
+            {isRunning ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} />}
+            {isRunning ? '运行中...' : '运行代码'}
           </button>
         </div>
-        <pre className="bg-gray-900 text-green-300 p-6 overflow-x-auto text-sm font-mono leading-relaxed">
-          {project.referenceSolution}
-        </pre>
       </div>
 
-      {/* 任务提示 */}
-      <div className="bg-white rounded-xl p-6 shadow-sm">
-        <h3 className="font-bold text-gray-800 mb-4">任务提示</h3>
-        <div className="space-y-3">
-          {project.tasks.map((task, i) => (
-            <div key={task.id} className="p-3 bg-amber-50 border border-amber-100 rounded-lg">
-              <div className="text-sm font-medium text-amber-800 mb-1">
-                {i + 1}. {task.title}
-              </div>
-              <div className="text-sm text-amber-700">{task.hint}</div>
+      {/* 参考答案浮层 */}
+      {showReference && (
+        <div className="border-b border-amber-300 bg-amber-50 max-h-[40%] overflow-y-auto shrink-0">
+          <div className="flex items-center justify-between px-4 py-2 bg-amber-100 sticky top-0">
+            <span className="text-sm font-bold text-amber-800">参考解答</span>
+            <div className="flex gap-2">
+              <button
+                onClick={handleLoadReference}
+                className="px-3 py-1 text-xs bg-indigo-900 text-white rounded hover:bg-indigo-800 transition-colors"
+              >
+                加载到编辑器
+              </button>
+              <button onClick={onCloseReference} className="p-1 hover:bg-amber-200 rounded">
+                <X size={14} className="text-amber-700" />
+              </button>
             </div>
-          ))}
+          </div>
+          <pre className="p-4 text-sm text-gray-800 font-mono leading-relaxed whitespace-pre-wrap">
+            {project.referenceSolution}
+          </pre>
+        </div>
+      )}
+
+      {/* 代码编辑器 */}
+      <div className="flex-1 min-h-0" style={{ minHeight: '120px' }}>
+        <Editor
+          height="100%"
+          language="python"
+          theme="vs-dark"
+          value={code}
+          onChange={(value) => onCodeChange(value || '')}
+          options={{
+            minimap: { enabled: false },
+            fontSize: 14,
+            lineNumbers: 'on',
+            scrollBeyondLastLine: false,
+            automaticLayout: true,
+            tabSize: 4,
+            wordWrap: 'on',
+            padding: { top: 12 },
+            suggestOnTriggerCharacters: true,
+            quickSuggestions: true,
+          }}
+        />
+      </div>
+
+      {/* 上下拖拽分割条 */}
+      <div
+        onMouseDown={handleVDragStart}
+        className="h-1.5 shrink-0 bg-gray-200 hover:bg-indigo-400 cursor-row-resize transition-colors relative group flex items-center justify-center"
+      >
+        <div className="w-8 h-1 rounded-full bg-gray-400 group-hover:bg-indigo-500 transition-colors" />
+      </div>
+
+      {/* 底部输出/任务面板 */}
+      <div className="shrink-0 border-t border-gray-300 flex flex-col" style={{ height: bottomHeight }}>
+        {/* 底部标签栏 */}
+        <div className="flex items-center bg-gray-100 border-b border-gray-200 shrink-0">
+          <button
+            onClick={() => setActiveBottomTab('output')}
+            className={`flex items-center gap-1.5 px-4 py-1.5 text-xs font-medium transition-colors ${
+              activeBottomTab === 'output'
+                ? 'text-indigo-900 border-b-2 border-indigo-900 bg-white'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <Terminal size={12} />
+            输出结果
+            {runCount > 0 && (
+              <span className="text-gray-400 ml-1">#{runCount}</span>
+            )}
+          </button>
+          <button
+            onClick={() => setActiveBottomTab('tasks')}
+            className={`flex items-center gap-1.5 px-4 py-1.5 text-xs font-medium transition-colors ${
+              activeBottomTab === 'tasks'
+                ? 'text-indigo-900 border-b-2 border-indigo-900 bg-white'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <ClipboardCheck size={12} />
+            任务测试
+          </button>
+          {hasOutput && activeBottomTab === 'output' && (
+            <button
+              onClick={() => { setOutput(''); setError(null); setImages([]); }}
+              className="ml-auto px-3 py-1 text-xs text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              清空
+            </button>
+          )}
+        </div>
+
+        {/* 底部内容 */}
+        <div className="flex-1 overflow-y-auto bg-gray-50">
+          {activeBottomTab === 'output' && (
+            <div className="p-3">
+              {!hasOutput && !isRunning && (
+                <div className="text-sm text-gray-400 flex items-center gap-2 py-4 justify-center">
+                  <Play size={14} />
+                  点击「运行代码」或按 Ctrl+Enter 执行
+                </div>
+              )}
+              {isRunning && !hasOutput && (
+                <div className="text-sm text-gray-400 flex items-center gap-2 py-4 justify-center">
+                  <Loader2 size={14} className="animate-spin" />
+                  正在执行代码...
+                </div>
+              )}
+              {output && (
+                <pre className="text-sm text-gray-800 whitespace-pre-wrap font-mono leading-relaxed">{output}</pre>
+              )}
+              {error && (
+                <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <pre className="text-sm text-red-600 whitespace-pre-wrap font-mono leading-relaxed">{error}</pre>
+                </div>
+              )}
+              {images.map((img, i) => (
+                <div key={i} className="mt-3">
+                  <img
+                    src={`data:image/png;base64,${img}`}
+                    alt={`图表 ${i + 1}`}
+                    className="max-w-full rounded border border-gray-200 shadow-sm"
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {activeBottomTab === 'tasks' && (
+            <TaskTestPanel project={project} />
+          )}
         </div>
       </div>
+    </div>
+  );
+}
+
+// ==================== 任务测试面板 ====================
+
+function TaskTestPanel({ project }: { project: (typeof bootcampProjects)[number] }) {
+  const store = useBootcampStore();
+
+  return (
+    <div className="p-3 space-y-2">
+      {project.tasks.map((task, i) => {
+        const completed = store.isTaskCompleted(project.id, task.id);
+        return (
+          <div
+            key={task.id}
+            className={`flex items-start gap-3 p-3 rounded-lg border transition-colors ${
+              completed ? 'bg-emerald-50 border-emerald-200' : 'bg-white border-gray-200'
+            }`}
+          >
+            <button
+              onClick={() => { if (!completed) store.completeTask(project.id, task.id); }}
+              className="shrink-0 mt-0.5"
+            >
+              <CheckCircle2
+                size={20}
+                className={completed ? 'text-emerald-500' : 'text-gray-300 hover:text-emerald-400'}
+              />
+            </button>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-bold text-gray-500">{i + 1}.</span>
+                <span className={`text-sm font-medium ${completed ? 'text-gray-400 line-through' : 'text-gray-800'}`}>
+                  {task.title}
+                </span>
+                {completed && (
+                  <span className="text-xs text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded-full">已完成</span>
+                )}
+              </div>
+              <p className="text-xs text-gray-500 mt-1">{task.description}</p>
+              {!completed && (
+                <div className="mt-2 p-2 bg-amber-50 border border-amber-100 rounded text-xs text-amber-700">
+                  <span className="font-medium">提示：</span>{task.hint}
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }

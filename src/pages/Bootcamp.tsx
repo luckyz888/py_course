@@ -20,6 +20,32 @@ const difficultyFilters: { key: BootcampProject['difficulty'] | 'all'; label: st
   { key: 'advanced', label: '高级' },
 ];
 
+const cardGradients = [
+  'from-indigo-500/10 to-violet-500/10',
+  'from-emerald-500/10 to-teal-500/10',
+  'from-amber-500/10 to-orange-500/10',
+  'from-rose-500/10 to-pink-500/10',
+  'from-violet-500/10 to-purple-500/10',
+  'from-cyan-500/10 to-sky-500/10',
+  'from-orange-500/10 to-red-500/10',
+  'from-teal-500/10 to-emerald-500/10',
+  'from-fuchsia-500/10 to-pink-500/10',
+  'from-lime-500/10 to-green-500/10',
+];
+
+const accentColors = [
+  'bg-indigo-500',
+  'bg-emerald-500',
+  'bg-amber-500',
+  'bg-rose-500',
+  'bg-violet-500',
+  'bg-cyan-500',
+  'bg-orange-500',
+  'bg-teal-500',
+  'bg-fuchsia-500',
+  'bg-lime-500',
+];
+
 export default function Bootcamp() {
   const navigate = useNavigate();
   const isProjectCompleted = useBootcampStore((s) => s.isProjectCompleted);
@@ -121,18 +147,24 @@ export default function Bootcamp() {
           const totalTaskCount = project.tasks.length;
           const diff = difficultyConfig[project.difficulty];
           const displayIndex = String(bootcampProjects.indexOf(project) + 1).padStart(2, '0');
+          const projectIdx = bootcampProjects.indexOf(project);
+          const gradient = cardGradients[projectIdx % cardGradients.length];
+          const accent = accentColors[projectIdx % accentColors.length];
 
           return (
             <div
               key={project.id}
               onClick={() => navigate(`/bootcamp/${project.id}`)}
-              className={`relative bg-white rounded-xl p-6 shadow-sm cursor-pointer
+              className={`relative bg-gradient-to-br ${gradient} rounded-xl p-6 cursor-pointer
                 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg
-                ${completed ? 'border-l-4 border-l-emerald-500' : 'border-l-4 border-l-transparent'}`}
+                border border-gray-100 overflow-hidden`}
             >
+              {/* 左侧彩色条 */}
+              <div className={`absolute left-0 top-0 bottom-0 w-1 ${accent}`} />
+
               <div className="flex items-start gap-4">
                 {/* Project Number */}
-                <div className="text-3xl font-black text-gray-200 select-none shrink-0 leading-none mt-1">
+                <div className={`text-3xl font-black select-none shrink-0 leading-none mt-1 ${accent.replace('bg-', 'text-').replace('500', '300')}`}>
                   {displayIndex}
                 </div>
 

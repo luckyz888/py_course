@@ -197,6 +197,7 @@ print(df.describe())
           codeExample: `missing_count = df.isnull().sum()
 missing_pct = df.isnull().mean()
 print(missing_count[missing_count > 0])`,
+          importance: 'core',
         },
         {
           title: 'dropna删除缺失值',
@@ -204,6 +205,7 @@ print(missing_count[missing_count > 0])`,
           codeExample: `df_clean = df.dropna()  # 删除任何含缺失的行
 df_clean = df.dropna(subset=['年龄', '性别'])  # 仅按指定列判断
 df_clean = df.dropna(thresh=5)  # 至少5个非缺失值才保留`,
+          importance: 'important',
         },
         {
           title: 'fillna填充缺失值',
@@ -211,12 +213,14 @@ df_clean = df.dropna(thresh=5)  # 至少5个非缺失值才保留`,
           codeExample: `df['年龄'] = df['年龄'].fillna(df['年龄'].median())
 df['性别'] = df['性别'].fillna(df['性别'].mode()[0])
 df['城市'] = df['城市'].fillna(method='ffill')`,
+          importance: 'important',
         },
         {
           title: '插值法填充',
           content: 'interpolate()方法提供更精细的插值填充策略，适用于数值型数据和时间序列。线性插值（默认）在两个已知值之间进行线性估算；method="quadratic"使用二次插值；method="cubic"使用三次样条插值，更平滑。limit参数可限制连续填充的最大数量，避免过多连续插值导致失真。插值法比前向填充更精确，尤其适合有趋势的数值数据。',
           codeExample: `df['销售额'] = df['销售额'].interpolate(method='linear')
 df['温度'] = df['温度'].interpolate(method='cubic', limit=3)`,
+          importance: 'supplementary',
         },
       ],
     },
@@ -229,6 +233,7 @@ df['温度'] = df['温度'].interpolate(method='cubic', limit=3)`,
           codeExample: `dup_mask = df.duplicated()  # 全列判断
 dup_count = dup_mask.sum()
 dup_by_id = df.duplicated(subset=['用户ID'])  # 按用户ID判断`,
+          importance: 'core',
         },
         {
           title: 'drop_duplicates删除重复',
@@ -236,6 +241,7 @@ dup_by_id = df.duplicated(subset=['用户ID'])  # 按用户ID判断`,
           codeExample: `df = df.drop_duplicates(subset=['用户ID'], keep='first')
 df = df.reset_index(drop=True)
 print(f'去重后行数: {len(df)}')`,
+          importance: 'important',
         },
         {
           title: 'subset与keep参数详解',
@@ -244,6 +250,7 @@ print(f'去重后行数: {len(df)}')`,
 df = df.drop_duplicates(subset=['姓名', '城市'], keep='last')
 # 删除所有重复行（不保留任何一条）
 df_strict = df.drop_duplicates(keep=False)`,
+          importance: 'supplementary',
         },
       ],
     },
@@ -256,12 +263,14 @@ df_strict = df.drop_duplicates(keep=False)`,
           codeExample: `df['年龄'] = df['年龄'].astype(int)
 df['性别'] = df['性别'].astype('category')
 df['金额'] = df['金额'].astype(float)`,
+          importance: 'core',
         },
         {
           title: 'pd.to_numeric智能转换',
           content: 'pd.to_numeric()比astype更智能，专门用于将列转为数值类型。errors参数控制错误处理：errors="raise"遇到无法转换的值抛异常（默认），errors="coerce"将无法转换的值设为NaN，errors="ignore"保持原样不变。downcast参数可自动选择最小数据类型以节省内存，如downcast="integer"自动选择int8/int16/int32/int64。这是处理混合类型列的首选方法。',
           codeExample: `df['订单数'] = pd.to_numeric(df['订单数'], errors='coerce')
 df['金额'] = pd.to_numeric(df['金额'], errors='coerce', downcast='float')`,
+          importance: 'important',
         },
         {
           title: 'pd.to_datetime日期转换',
@@ -269,6 +278,7 @@ df['金额'] = pd.to_numeric(df['金额'], errors='coerce', downcast='float')`,
           codeExample: `df['日期'] = pd.to_datetime(df['日期'], format='%Y-%m-%d')
 df['日期'] = pd.to_datetime(df['日期'], errors='coerce')
 df['年份'] = df['日期'].dt.year`,
+          importance: 'important',
         },
         {
           title: 'category类型优化',
@@ -276,6 +286,7 @@ df['年份'] = df['日期'].dt.year`,
           codeExample: `df['城市'] = df['城市'].astype('category')
 df['等级'] = pd.Categorical(df['等级'], categories=['低','中','高'], ordered=True)
 print(df['城市'].cat.codes.head())  # 查看内部编码`,
+          importance: 'supplementary',
         },
       ],
     },
@@ -288,6 +299,7 @@ print(df['城市'].cat.codes.head())  # 查看内部编码`,
           codeExample: `df['姓名'] = df['姓名'].str.strip()
 df['城市'] = df['城市'].str.replace('市', '', regex=False)
 df['邮箱域名'] = df['邮箱'].str.split('@').str[1]`,
+          importance: 'core',
         },
         {
           title: '正则表达式清洗',
@@ -295,6 +307,7 @@ df['邮箱域名'] = df['邮箱'].str.split('@').str[1]`,
           codeExample: `df['手机号'] = df['联系方式'].str.extract(r'(1\\d{10})')
 df['数值'] = df['金额'].str.replace(r'[^\d.]', '', regex=True).astype(float)
 mask = df['地址'].str.contains(r'北京|上海', na=False)`,
+          importance: 'important',
         },
         {
           title: 'split字符串拆分',
@@ -302,6 +315,7 @@ mask = df['地址'].str.contains(r'北京|上海', na=False)`,
           codeExample: `df[['姓', '名']] = df['姓名'].str.split('', n=1, expand=True)
 df[['省', '市']] = df['地址'].str.split('省', n=1, expand=True)
 df['域名'] = df['邮箱'].str.split('@').str[-1]`,
+          importance: 'supplementary',
         },
       ],
     },
@@ -316,6 +330,7 @@ Q3 = df['金额'].quantile(0.75)
 IQR = Q3 - Q1
 lower, upper = Q1 - 1.5 * IQR, Q3 + 1.5 * IQR
 outliers = df[(df['金额'] < lower) | (df['金额'] > upper)]`,
+          importance: 'core',
         },
         {
           title: 'Z-Score方法',
@@ -323,6 +338,7 @@ outliers = df[(df['金额'] < lower) | (df['金额'] > upper)]`,
           codeExample: `z_scores = (df['金额'] - df['金额'].mean()) / df['金额'].std()
 outliers = df[z_scores.abs() > 3]
 print(f'异常值数量: {len(outliers)}')`,
+          importance: 'important',
         },
         {
           title: 'clip裁剪',
@@ -330,6 +346,7 @@ print(f'异常值数量: {len(outliers)}')`,
           codeExample: `df['年龄'] = df['年龄'].clip(lower=0, upper=150)
 df['百分比'] = df['百分比'].clip(0, 100)
 df['金额'] = df['金额'].clip(lower=df['金额'].quantile(0.01))`,
+          importance: 'important',
         },
         {
           title: '分位数法',
@@ -338,6 +355,7 @@ df['金额'] = df['金额'].clip(lower=df['金额'].quantile(0.01))`,
 upper = df['金额'].quantile(0.99)
 df['金额'] = df['金额'].clip(lower, upper)
 print(f'裁剪范围: [{lower:.2f}, {upper:.2f}]')`,
+          importance: 'supplementary',
         },
       ],
     },
@@ -493,6 +511,7 @@ print(pivot)
 print(type(grouped))  # DataFrameGroupBy对象
 result = grouped['销售额'].sum()  # 触发实际计算
 print(result)`,
+          importance: 'core',
         },
         {
           title: '迭代分组与分组大小',
@@ -501,6 +520,7 @@ print(result)`,
     print(f'{name}: {len(group)}条')
 print(df.groupby('品类').size())
 print(df.groupby('品类').ngroups)`,
+          importance: 'supplementary',
         },
       ],
     },
@@ -514,6 +534,7 @@ print(df.groupby('品类').ngroups)`,
 print(cat_stats)
 # 多列多指标
 df.groupby('品类')[['销售额', '利润']].mean()`,
+          importance: 'core',
         },
         {
           title: 'agg多函数聚合',
@@ -523,6 +544,7 @@ df.groupby('品类')[['销售额', '利润']].mean()`,
     '利润': ['sum', 'mean'],
     '门店': 'count'
 })`,
+          importance: 'important',
         },
         {
           title: '命名聚合',
@@ -532,6 +554,7 @@ df.groupby('品类')[['销售额', '利润']].mean()`,
     平均利润=('利润', 'mean'),
     订单数=('门店', 'count')
 )`,
+          importance: 'supplementary',
         },
       ],
     },
@@ -543,6 +566,7 @@ df.groupby('品类')[['销售额', '利润']].mean()`,
           content: 'transform()方法对每组应用函数后，返回与原DataFrame相同长度的结果，而不是聚合为每行一个结果。这是transform与agg的核心区别。transform的结果会"广播"回原始行的位置，方便将组级统计量添加为新列。例如计算每个学生在班级中的排名、每个员工在部门中的薪资百分位等。transform的结果形状必须与输入组一致或可广播。',
           codeExample: `df['品类平均销售额'] = df.groupby('品类')['销售额'].transform('mean')
 df['门店内排名'] = df.groupby('门店')['销售额'].transform(lambda x: x.rank(ascending=False))`,
+          importance: 'core',
         },
         {
           title: '组内标准化与排名',
@@ -550,6 +574,7 @@ df['门店内排名'] = df.groupby('门店')['销售额'].transform(lambda x: x.
           codeExample: `df['组内标准化'] = df.groupby('品类')['销售额'].transform(lambda x: (x - x.mean()) / x.std())
 df['组内排名'] = df.groupby('门店')['销售额'].transform('rank', ascending=False)
 df['与组均值差'] = df.groupby('品类')['销售额'].transform(lambda x: x - x.mean())`,
+          importance: 'supplementary',
         },
       ],
     },
@@ -565,6 +590,7 @@ df.groupby('门店').apply(lambda x: x.loc[x['利润'].idxmax(), '品类'])
 df.groupby('品类').apply(lambda x: pd.Series({
     '利润率': x['利润'].sum() / x['销售额'].sum()
 }))`,
+          importance: 'core',
         },
         {
           title: 'filter过滤与pipe管道',
@@ -575,6 +601,7 @@ big_cats = df.groupby('品类').filter(lambda x: len(x) > 50)
 result = (df.groupby('品类')
     .pipe(lambda x: x['销售额'].sum())
     .sort_values(ascending=False))`,
+          importance: 'supplementary',
         },
       ],
     },
@@ -587,6 +614,7 @@ result = (df.groupby('品类')
           codeExample: `pivot = pd.pivot_table(df, values='销售额', index='门店', columns='品类', aggfunc='sum', fill_value=0)
 print(pivot)
 pivot_mean = pd.pivot_table(df, values='销售额', index='门店', aggfunc='mean')`,
+          importance: 'core',
         },
         {
           title: '多级透视与melt反透视',
@@ -595,6 +623,7 @@ pivot_mean = pd.pivot_table(df, values='销售额', index='门店', aggfunc='mea
 pivot_multi = pd.pivot_table(df, values='销售额', index=['门店'], columns=['品类'], aggfunc=['sum', 'mean'])
 # melt反透视
 long_df = pd.melt(pivot.reset_index(), id_vars=['门店'], var_name='品类', value_name='销售额')`,
+          importance: 'important',
         },
         {
           title: 'crosstab交叉表',
@@ -602,6 +631,7 @@ long_df = pd.melt(pivot.reset_index(), id_vars=['门店'], var_name='品类', va
           codeExample: `ct = pd.crosstab(df['门店'], df['品类'])
 ct_pct = pd.crosstab(df['门店'], df['品类'], normalize='index')  # 行百分比
 ct_sum = pd.crosstab(df['门店'], df['品类'], values=df['销售额'], aggfunc='sum')`,
+          importance: 'supplementary',
         },
       ],
     },
@@ -822,6 +852,7 @@ for _, row in rec_df.head(3).iterrows():
           codeExample: `df = df.dropna(subset=['订单ID', '商品名'])
 df = df.drop_duplicates()
 print(f'订单数: {df["订单ID"].nunique()}, 商品种类: {df["商品名"].nunique()}')`,
+          importance: 'core',
         },
         {
           title: '构建购物篮与编码转换',
@@ -830,6 +861,7 @@ print(f'订单数: {df["订单ID"].nunique()}, 商品种类: {df["商品名"].nu
 basket = (basket > 0).astype(int)
 print(f'购物篮矩阵形状: {basket.shape}')
 print(basket.head())`,
+          importance: 'supplementary',
         },
       ],
     },
@@ -843,6 +875,7 @@ print(basket.head())`,
 print(support.sort_values(ascending=False).head())
 min_support = 0.05
 frequent_items = support[support >= min_support]`,
+          importance: 'core',
         },
         {
           title: 'Apriori原理与频繁项集挖掘',
@@ -854,6 +887,7 @@ for pair in combinations(basket.columns, 2):
     if sup >= 0.05:
         freq_pairs.append({'商品对': pair, '支持度': sup})
 print(pd.DataFrame(freq_pairs).sort_values('支持度', ascending=False))`,
+          importance: 'supplementary',
         },
       ],
     },
@@ -866,6 +900,7 @@ print(pd.DataFrame(freq_pairs).sort_values('支持度', ascending=False))`,
           codeExample: `conf_AB = basket[basket['牛奶'] == 1]['面包'].mean()
 print(f'置信度(牛奶→面包): {conf_AB:.4f}')
 # 等价于: support_AB / support_A`,
+          importance: 'core',
         },
         {
           title: '提升度与杠杆率',
@@ -874,6 +909,7 @@ print(f'置信度(牛奶→面包): {conf_AB:.4f}')
 print(f'提升度(牛奶→面包): {lift:.4f}')
 leverage = basket[['牛奶','面包']].all(axis=1).mean() - basket['牛奶'].mean() * basket['面包'].mean()
 print(f'杠杆率: {leverage:.4f}')`,
+          importance: 'supplementary',
         },
       ],
     },
@@ -887,6 +923,7 @@ print(f'杠杆率: {leverage:.4f}')`,
 rules_df = rules_df.sort_values('提升度', ascending=False)
 print(f'筛选后规则数: {len(rules_df)}')
 print(rules_df.head(10))`,
+          importance: 'core',
         },
         {
           title: '规则可视化与业务解读',
@@ -895,6 +932,7 @@ print(rules_df.head(10))`,
 plt.scatter(rules_df['支持度'], rules_df['置信度'], s=rules_df['提升度']*20, alpha=0.6)
 plt.xlabel('支持度'); plt.ylabel('置信度'); plt.title('关联规则散点图')
 plt.show()`,
+          importance: 'supplementary',
         },
       ],
     },
@@ -1094,6 +1132,7 @@ for label, name in cluster_names.items():
           codeExample: `feature_cols = ['消费金额', '购买频次', '最近购买天数', '平均客单价']
 X = df[feature_cols]
 print(X.describe())`,
+          importance: 'core',
         },
         {
           title: '标准化与归一化',
@@ -1103,6 +1142,7 @@ scaler = StandardScaler()
 X_scaled = scaler.fit_transform(df[feature_cols])
 # MinMaxScaler归一化到[0,1]
 X_norm = MinMaxScaler().fit_transform(df[feature_cols])`,
+          importance: 'important',
         },
         {
           title: '距离度量',
@@ -1111,6 +1151,7 @@ X_norm = MinMaxScaler().fit_transform(df[feature_cols])`,
 euclidean = pairwise_distances(X_scaled[:5], metric='euclidean')
 manhattan = pairwise_distances(X_scaled[:5], metric='manhattan')
 print('欧氏距离:\\n', euclidean)`,
+          importance: 'supplementary',
         },
       ],
     },
@@ -1125,6 +1166,7 @@ km = KMeans(n_clusters=3, random_state=42, n_init=10)
 labels = km.fit_predict(X_scaled)
 print(f'簇中心:\\n{km.cluster_centers_}')
 print(f'惯性: {km.inertia_:.2f}')`,
+          importance: 'core',
         },
         {
           title: '初始化方法与收敛条件',
@@ -1132,6 +1174,7 @@ print(f'惯性: {km.inertia_:.2f}')`,
           codeExample: `km = KMeans(n_clusters=3, init='k-means++', n_init=10, max_iter=300, tol=1e-4, random_state=42)
 labels = km.fit_predict(X_scaled)
 print(f'迭代次数: {km.n_iter_}, 惯性: {km.inertia_:.2f}')`,
+          importance: 'supplementary',
         },
       ],
     },
@@ -1147,6 +1190,7 @@ for k in range(2, 9):
     km.fit(X_scaled)
     inertias.append(km.inertia_)
     print(f'K={k}, Inertia={km.inertia_:.2f}')`,
+          importance: 'core',
         },
         {
           title: '轮廓系数',
@@ -1157,6 +1201,7 @@ for k in range(2, 9):
     labels = km.fit_predict(X_scaled)
     score = silhouette_score(X_scaled, labels)
     print(f'K={k}, 轮廓系数={score:.4f}')`,
+          importance: 'supplementary',
         },
       ],
     },
@@ -1171,6 +1216,7 @@ print(cluster_stats)
 # 逆变换簇中心到原始尺度
 centers = scaler.inverse_transform(km.cluster_centers_)
 print(pd.DataFrame(centers, columns=feature_cols).round(2))`,
+          importance: 'core',
         },
         {
           title: '可视化与业务解读',
@@ -1182,6 +1228,7 @@ import matplotlib.pyplot as plt
 plt.scatter(X_pca[:, 0], X_pca[:, 1], c=labels, cmap='Set2', alpha=0.6)
 plt.xlabel('PC1'); plt.ylabel('PC2'); plt.title('聚类结果PCA可视化')
 plt.show()`,
+          importance: 'supplementary',
         },
       ],
     },
@@ -1402,6 +1449,7 @@ ax.plot([1, 2, 3], [4, 5, 6])
 ax.set_title('示例图表')
 ax.set_xlabel('X轴'); ax.set_ylabel('Y轴')
 plt.tight_layout(); plt.show()`,
+          importance: 'core',
         },
         {
           title: '折线图与柱状图',
@@ -1409,6 +1457,7 @@ plt.tight_layout(); plt.show()`,
           codeExample: `ax.plot(df['月份'], df['收入'], marker='o', label='收入', color='#2E86AB')
 ax.bar(x, df['销售额'], width=0.6, label='销售额', color='#ED7D31')
 ax.legend(); plt.show()`,
+          importance: 'important',
         },
         {
           title: '散点图与饼图',
@@ -1416,6 +1465,7 @@ ax.legend(); plt.show()`,
           codeExample: `ax.scatter(df['收入'], df['利润'], s=50, c=df['月份'], cmap='viridis', alpha=0.7)
 ax.pie(values, labels=labels, autopct='%1.1f%%', startangle=90, explode=[0.05]*len(values))
 plt.show()`,
+          importance: 'supplementary',
         },
       ],
     },
@@ -1429,6 +1479,7 @@ plt.show()`,
 sns.histplot(df['销售额'], kde=True, bins=30)
 corr = df.corr(numeric_only=True)
 sns.heatmap(corr, annot=True, cmap='RdBu_r', center=0)`,
+          importance: 'core',
         },
         {
           title: '箱线图与分类图',
@@ -1436,6 +1487,7 @@ sns.heatmap(corr, annot=True, cmap='RdBu_r', center=0)`,
           codeExample: `sns.boxplot(data=df, x='品类', y='销售额')
 sns.catplot(data=df, x='门店', y='销售额', kind='violin', height=5, aspect=2)
 sns.violinplot(data=df, x='类别', y='数值', hue='分组', split=True)`,
+          importance: 'supplementary',
         },
       ],
     },
@@ -1449,6 +1501,7 @@ sns.violinplot(data=df, x='类别', y='数值', hue='分组', split=True)`,
 ax.set_xlabel('月份', fontsize=12); ax.set_ylabel('销售额（万元）', fontsize=12)
 ax.legend(loc='best', fontsize=10)
 ax.spines['top'].set_visible(False); ax.spines['right'].set_visible(False)`,
+          importance: 'core',
         },
         {
           title: '配色方案与注释标注',
@@ -1456,6 +1509,7 @@ ax.spines['top'].set_visible(False); ax.spines['right'].set_visible(False)`,
           codeExample: `ax.annotate(f'峰值: {max_val}', xy=(max_idx, max_val), xytext=(max_idx, max_val*1.1),
     arrowprops=dict(arrowstyle='->', color='red'), fontsize=10, color='red')
 ax.set_prop_cycle('color', ['#2E86AB', '#A23B72', '#F18F01', '#C73E1D'])`,
+          importance: 'important',
         },
         {
           title: '中文显示设置',
@@ -1464,6 +1518,7 @@ ax.set_prop_cycle('color', ['#2E86AB', '#A23B72', '#F18F01', '#C73E1D'])`,
 matplotlib.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'Arial Unicode MS']
 matplotlib.rcParams['axes.unicode_minus'] = False
 plt.title('中文标题测试')`,
+          importance: 'supplementary',
         },
       ],
     },
@@ -1478,6 +1533,7 @@ axes[0, 0].plot(x, y1); axes[0, 0].set_title('趋势1')
 axes[0, 1].bar(x, y2); axes[0, 1].set_title('对比1')
 axes[1, 0].scatter(x, y3); axes[1, 0].set_title('关系1')
 plt.tight_layout()`,
+          importance: 'core',
         },
         {
           title: '双Y轴与图表布局',
@@ -1489,6 +1545,7 @@ ax2 = ax1.twinx()
 ax2.plot(x, growth, 'r--', label='增长率')
 ax2.set_ylabel('增长率（%）', color='r')
 plt.title('销售额与增长率双轴图')`,
+          importance: 'supplementary',
         },
       ],
     },
@@ -1698,6 +1755,7 @@ np.random.shuffle(users)
 group_a = users[:500]
 group_b = users[500:]
 print(f'A组: {len(group_a)}人, B组: {len(group_b)}人')`,
+          importance: 'core',
         },
         {
           title: '样本量计算与指标选择',
@@ -1705,6 +1763,7 @@ print(f'A组: {len(group_a)}人, B组: {len(group_b)}人')`,
           codeExample: `from statsmodels.stats.power import zt_ind_solve_power
 n = zt_ind_solve_power(effect_size=0.2, alpha=0.05, power=0.8)
 print(f'每组所需样本量: {int(np.ceil(n))}')`,
+          importance: 'supplementary',
         },
       ],
     },
@@ -1719,6 +1778,7 @@ print(f'每组所需样本量: {int(np.ceil(n))}')`,
 conv_a = df[df['组别']=='A']['是否转化'].mean()
 conv_b = df[df['组别']=='B']['是否转化'].mean()
 print(f'A组转化率: {conv_a:.4f}, B组转化率: {conv_b:.4f}')`,
+          importance: 'core',
         },
         {
           title: 'p值与两类错误',
@@ -1728,6 +1788,7 @@ chi2, p_value, dof, expected = stats.chi2_contingency(contingency)
 alpha = 0.05
 print(f'p值: {p_value:.4f}')
 print(f'结论: {"拒绝H0，差异显著" if p_value < alpha else "不能拒绝H0"}')`,
+          importance: 'supplementary',
         },
       ],
     },
@@ -1742,6 +1803,7 @@ amount_a = df[(df['组别']=='A') & (df['是否转化']==1)]['订单金额']
 amount_b = df[(df['组别']=='B') & (df['是否转化']==1)]['订单金额']
 t_stat, p_val = stats.ttest_ind(amount_a, amount_b, equal_var=False)
 print(f't统计量: {t_stat:.4f}, p值: {p_val:.4f}')`,
+          importance: 'core',
         },
         {
           title: '卡方检验（比例指标）',
@@ -1750,6 +1812,7 @@ print(f't统计量: {t_stat:.4f}, p值: {p_val:.4f}')`,
 chi2, p_val, dof, expected = stats.chi2_contingency(contingency)
 print(f'卡方统计量: {chi2:.4f}, p值: {p_val:.4f}')
 print(f'列联表:\\n{contingency}')`,
+          importance: 'important',
         },
         {
           title: '非参数检验与多重比较',
@@ -1759,6 +1822,7 @@ u_stat, p_val = mannwhitneyu(group_a, group_b, alternative='two-sided')
 # Bonferroni校正
 alpha_corrected = 0.05 / n_tests
 print(f'校正后α: {alpha_corrected:.4f}')`,
+          importance: 'supplementary',
         },
       ],
     },
@@ -1773,6 +1837,7 @@ cohens_d = (amount_b.mean() - amount_a.mean()) / pooled_std
 print(f"Cohen's d: {cohens_d:.4f}")
 effect = '小' if abs(cohens_d) < 0.2 else '中' if abs(cohens_d) < 0.8 else '大'
 print(f'效应大小: {effect}效应')`,
+          importance: 'core',
         },
         {
           title: '置信区间与业务显著性',
@@ -1782,6 +1847,7 @@ se = np.sqrt(conv_a*(1-conv_a)/n_a + conv_b*(1-conv_b)/n_b)
 ci_lower, ci_upper = diff - 1.96*se, diff + 1.96*se
 print(f'转化率差异: {diff:.4f}')
 print(f'95%置信区间: [{ci_lower:.4f}, {ci_upper:.4f}]')`,
+          importance: 'supplementary',
         },
       ],
     },
@@ -1968,6 +2034,7 @@ print(f"整体趋势: {'上升' if df['销售额'].iloc[-1] > df['销售额'].il
 df = df.set_index('日期')
 print(df.index.dtype)  # datetime64[ns]
 print(df['2023-06'])  # 选取2023年6月数据`,
+          importance: 'core',
         },
         {
           title: 'dt访问器与时间差',
@@ -1976,6 +2043,7 @@ print(df['2023-06'])  # 选取2023年6月数据`,
 df['月份'] = df['日期'].dt.month
 df['是否周末'] = df['日期'].dt.dayofweek >= 5
 df['距今天数'] = (pd.Timestamp.now() - df['日期']).dt.days`,
+          importance: 'supplementary',
         },
       ],
     },
@@ -1988,6 +2056,7 @@ df['距今天数'] = (pd.Timestamp.now() - df['日期']).dt.days`,
           codeExample: `monthly = df.resample('M')['销售额'].sum()
 weekly_mean = df.resample('W')['销售额'].mean()
 hourly = df.resample('H')['销售额'].sum()  # 升采样需填充`,
+          importance: 'core',
         },
         {
           title: '升采样与OHLC重采样',
@@ -1997,6 +2066,7 @@ ohlc = df['销售额'].resample('W').ohlc()
 # 升采样填充
 daily = monthly.resample('D').ffill()
 quarterly = df.resample('Q', label='right')['销售额'].sum()`,
+          importance: 'supplementary',
         },
       ],
     },
@@ -2009,6 +2079,7 @@ quarterly = df.resample('Q', label='right')['销售额'].sum()`,
           codeExample: `df['MA7'] = df['销售额'].rolling(window=7).mean()
 df['MA30'] = df['销售额'].rolling(window=30, min_periods=15).mean()
 df['滚动标准差'] = df['销售额'].rolling(7).std()`,
+          importance: 'core',
         },
         {
           title: 'expanding与ewm指数加权',
@@ -2017,6 +2088,7 @@ df['滚动标准差'] = df['销售额'].rolling(7).std()`,
 df['EMA12'] = df['销售额'].ewm(span=12).mean()
 df['昨日销售额'] = df['销售额'].shift(1)
 df['7日均值_lag'] = df['销售额'].rolling(7).mean().shift(1)`,
+          importance: 'supplementary',
         },
       ],
     },
@@ -2031,6 +2103,7 @@ result = seasonal_decompose(df['销售额'], model='additive', period=365)
 result.plot()
 plt.show()
 print(f'趋势:\\n{result.trend.head()}')`,
+          importance: 'core',
         },
         {
           title: '同比环比与差分平稳化',
@@ -2040,6 +2113,7 @@ monthly_pct = monthly.pct_change()  # 环比
 monthly_yoy = monthly.pct_change(12)  # 同比
 df_diff = df['销售额'].diff()  # 一阶差分
 df_diff2 = df['销售额'].diff().diff()  # 二阶差分`,
+          importance: 'supplementary',
         },
       ],
     },
@@ -2245,6 +2319,7 @@ le = LabelEncoder()
 df['教育编码'] = le.fit_transform(df['教育程度'])
 oe = OrdinalEncoder(categories=[['低', '中', '高']])
 df[['等级编码']] = oe.fit_transform(df[['等级']])`,
+          importance: 'core',
         },
         {
           title: 'OneHotEncoder',
@@ -2254,6 +2329,7 @@ ohe = OneHotEncoder(sparse_output=False, drop='first')
 encoded = ohe.fit_transform(df[['婚姻状况', '是否有房']])
 # Pandas方式
 df_encoded = pd.get_dummies(df, columns=['婚姻状况'], drop_first=True, dtype=int)`,
+          importance: 'important',
         },
         {
           title: '目标编码',
@@ -2265,6 +2341,7 @@ df['城市_目标编码'] = df['城市'].map(target_mean)
 global_mean = df['是否违约'].mean()
 smoothing = 10
 df['城市_平滑编码'] = (df.groupby('城市')['是否违约'].transform('sum') + smoothing * global_mean) / (df.groupby('城市')['是否违约'].transform('count') + smoothing)`,
+          importance: 'supplementary',
         },
       ],
     },
@@ -2277,6 +2354,7 @@ df['城市_平滑编码'] = (df.groupby('城市')['是否违约'].transform('sum
           codeExample: `df['年龄分组'] = pd.cut(df['年龄'], bins=[0, 30, 45, 60, 100], labels=['青年', '中年', '中老年', '老年'])
 df['收入分组'] = pd.qcut(df['收入'], q=4, labels=['Q1', 'Q2', 'Q3', 'Q4'])
 print(df['年龄分组'].value_counts())`,
+          importance: 'core',
         },
         {
           title: '多项式特征与对数变换',
@@ -2285,6 +2363,7 @@ print(df['年龄分组'].value_counts())`,
 poly = PolynomialFeatures(degree=2, include_bias=False)
 X_poly = poly.fit_transform(df[['年龄', '收入']])
 df['收入_log'] = np.log1p(df['收入'])  # log(1+x)，避免log(0)`,
+          importance: 'supplementary',
         },
       ],
     },
@@ -2298,6 +2377,7 @@ df['收入_log'] = np.log1p(df['收入'])  # log(1+x)，避免log(0)`,
 df['贷款收入比'] = df['贷款金额'] / df['收入']
 df['逾期率'] = df['逾期次数'] / df['信用历史'].clip(lower=1)
 df['年龄收入交互'] = df['年龄'] * df['收入']`,
+          importance: 'core',
         },
         {
           title: '特征组合策略',
@@ -2309,6 +2389,7 @@ high_corr = corr_matrix[corr_matrix.abs() > 0.5].stack().dropna()
 from sklearn.feature_extraction import FeatureHasher
 hasher = FeatureHasher(n_features=10, input_type='string')
 hashed = hasher.transform(df['城市'].apply(lambda x: [x]))`,
+          importance: 'supplementary',
         },
       ],
     },
@@ -2325,6 +2406,7 @@ X_selected = vt.fit_transform(X)
 corr = pd.DataFrame(X).corr().abs()
 upper = corr.where(np.triu(np.ones(corr.shape), k=1).astype(bool))
 to_drop = [col for col in upper.columns if any(upper[col] > 0.95)]`,
+          importance: 'core',
         },
         {
           title: '互信息与特征重要性',
@@ -2334,6 +2416,7 @@ rf = RandomForestClassifier(n_estimators=100, random_state=42)
 rf.fit(X, y)
 importance = pd.Series(rf.feature_importances_, index=X.columns)
 print(importance.sort_values(ascending=False).head(10))`,
+          importance: 'supplementary',
         },
       ],
     },
@@ -2558,6 +2641,7 @@ IQR = Q3 - Q1
 lower, upper = Q1 - 1.5 * IQR, Q3 + 1.5 * IQR
 outliers = df[(df['CPU使用率'] < lower) | (df['CPU使用率'] > upper)]
 print(f'异常值数量: {len(outliers)}')`,
+          importance: 'core',
         },
         {
           title: 'Z-Score标准分法与3σ原则',
@@ -2569,6 +2653,7 @@ median = df['响应时间'].median()
 mad = (df['响应时间'] - median).abs().median()
 modified_z = 0.6745 * (df['响应时间'] - median) / mad
 outliers_mad = df[modified_z.abs() > 3.5]`,
+          importance: 'supplementary',
         },
       ],
     },
@@ -2584,6 +2669,7 @@ pred = iso.fit_predict(X)
 # -1表示异常，1表示正常
 anomaly_score = iso.decision_function(X)
 print(f'异常数量: {(pred == -1).sum()}')`,
+          importance: 'core',
         },
         {
           title: 'contamination参数与sklearn实现',
@@ -2593,6 +2679,7 @@ labels = iso.fit_predict(df[monitor_cols])
 df['孤立森林异常'] = (labels == -1).astype(int)
 scores = iso.decision_function(df[monitor_cols])
 print(f'异常比例: {df["孤立森林异常"].mean():.2%}')`,
+          importance: 'supplementary',
         },
       ],
     },
@@ -2609,6 +2696,7 @@ labels = lof.fit_predict(X)
 df['LOF异常'] = (labels == -1).astype(int)
 # 获取LOF分数（负值，越小越异常）
 lof_scores = lof.negative_outlier_factor_`,
+          importance: 'core',
         },
         {
           title: 'k近邻与局部密度',
@@ -2618,6 +2706,7 @@ labels = lof.fit_predict(df[monitor_cols])
 df['LOF异常'] = (labels == -1).astype(int)
 print(f'LOF检测异常数: {df["LOF异常"].sum()}')
 print(f'LOF分数范围: [{lof.negative_outlier_factor_.min():.2f}, {lof.negative_outlier_factor_.max():.2f}]')`,
+          importance: 'supplementary',
         },
       ],
     },
@@ -2634,6 +2723,7 @@ center = df[monitor_cols].mean().values
 df['马氏距离'] = df[monitor_cols].apply(lambda x: mahalanobis(x, center, inv_cov), axis=1)
 threshold = np.sqrt(df['马氏距离'].quantile(0.99))
 df['多维异常'] = (df['马氏距离'] > threshold).astype(int)`,
+          importance: 'core',
         },
         {
           title: '业务规则与异常报告',
@@ -2644,6 +2734,7 @@ df['最终异常'] = (df['异常计数'] >= 2).astype(int)
 report = df[df['最终异常'] == 1][['时间戳'] + monitor_cols + ['异常计数']]
 print(f'异常报告: {len(report)}条异常记录')
 print(report.head())`,
+          importance: 'supplementary',
         },
       ],
     },
@@ -2838,6 +2929,7 @@ result = pd.merge(df_orders, df_customers, on='客户ID', how='inner')
 # 左连接：保留所有订单（即使客户信息缺失）
 result = pd.merge(df_orders, df_customers, on='客户ID', how='left')
 print(f'内连接: {len(result)}行, 左连接: {len(result)}行')`,
+          importance: 'core',
         },
         {
           title: 'on参数与连接键',
@@ -2848,6 +2940,7 @@ result = pd.merge(df1, df2, left_on='客户编号', right_on='客户ID', how='in
 result = pd.merge(df1, df2, on=['门店', '日期'], how='left')
 # 自定义后缀
 result = pd.merge(df1, df2, on='ID', suffixes=('_订单', '_退货'))`,
+          importance: 'supplementary',
         },
       ],
     },
@@ -2861,6 +2954,7 @@ result = pd.merge(df1, df2, on='ID', suffixes=('_订单', '_退货'))`,
 print(result['_merge'].value_counts())
 # 验证一对一连接
 result = pd.merge(df1, df2, on='ID', validate='1:1')`,
+          importance: 'core',
         },
         {
           title: 'suffixes与validate验证',
@@ -2870,6 +2964,7 @@ result = pd.merge(df1, df2, on='ID', validate='1:1')`,
 # 检查是否有重复行（可能表示数据问题）
 dup_keys = result.duplicated(subset=['订单ID', '产品ID']).sum()
 print(f'重复键数: {dup_keys}')`,
+          importance: 'supplementary',
         },
       ],
     },
@@ -2884,6 +2979,7 @@ full = pd.concat([df_q1, df_q2, df_q3, df_q4], axis=0)
 # 横向拼接（追加列）
 wide = pd.concat([df_info, df_scores], axis=1)
 print(f'纵向拼接: {full.shape}, 横向拼接: {wide.shape}')`,
+          importance: 'core',
         },
         {
           title: 'ignore_index与keys层次索引',
@@ -2893,6 +2989,7 @@ full = pd.concat([df_q1, df_q2, df_q3, df_q4], keys=['Q1', 'Q2', 'Q3', 'Q4'])
 print(full.loc['Q1'].head())  # 按来源选取
 # 重置索引
 full = pd.concat([df_q1, df_q2], ignore_index=True)`,
+          importance: 'supplementary',
         },
       ],
     },
@@ -2906,6 +3003,7 @@ full = pd.concat([df_q1, df_q2], ignore_index=True)`,
 print(f'缺失值:\\n{merged.isnull().sum()}')
 print(f'重复行: {merged.duplicated().sum()}')
 print(f'行数: {len(merged)}, 预期: {len(df_orders)}')`,
+          importance: 'core',
         },
         {
           title: '引用完整性与合并后验证',
@@ -2917,6 +3015,7 @@ print(f'孤立客户引用: {len(orphan_customers)}')
 print(f'孤立产品引用: {len(orphan_products)}')
 # 验证合并结果
 assert len(result) == len(df_orders), '行数异常'`,
+          importance: 'supplementary',
         },
       ],
     },

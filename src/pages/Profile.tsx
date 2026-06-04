@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { User, Star, Flame, BookOpen, Download, Upload, Trash2, AlertTriangle } from 'lucide-react';
+import { User, Star, Flame, BookOpen, Download, Upload, Trash2, AlertTriangle, TrendingUp, Award, BarChart3, Database } from 'lucide-react';
 import { useCourseStore } from '../stores/courseStore';
 import { useExerciseStore } from '../stores/exerciseStore';
 import { useQuizStore } from '../stores/quizStore';
@@ -90,12 +90,18 @@ export default function Profile() {
 
   return (
     <div className="space-y-6 animate-slide-up">
-      {/* 标题 */}
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-[#1e1b4b]/10 flex items-center justify-center">
-          <User className="w-5 h-5 text-[#1e1b4b]" />
+      {/* 个人中心头部横幅 */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-500 via-violet-500 to-purple-500 p-6 shadow-lg">
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDM0djItSDI0di0yaDEyem0wLTRWMjhIMjR2MmgxMnptMC00VjI0SDI0djJoMTJ6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-30" />
+        <div className="relative flex items-center gap-4">
+          <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center ring-2 ring-white/30">
+            <User className="w-8 h-8 text-white" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-white">个人中心</h1>
+            <p className="text-sm text-white/70 mt-0.5">追踪你的学习旅程</p>
+          </div>
         </div>
-        <h1 className="text-2xl font-bold text-[#1e1b4b]">个人中心</h1>
       </div>
 
       {/* 学习统计卡片 */}
@@ -109,14 +115,14 @@ export default function Profile() {
         <StatsCard
           title="当前等级"
           value={level.name}
-          icon={<Star className="w-6 h-6" />}
-          color="#1e1b4b"
+          icon={<Award className="w-6 h-6" />}
+          color="#8b5cf6"
         />
         <StatsCard
           title="连续学习天数"
           value={streak}
           icon={<Flame className="w-6 h-6" />}
-          color="#f59e0b"
+          color="#ef4444"
         />
         <StatsCard
           title="完成知识点数"
@@ -128,7 +134,11 @@ export default function Profile() {
 
       {/* 学习进度概览 */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-        <h2 className="text-lg font-bold text-[#1e1b4b] mb-4">学习进度概览</h2>
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-1.5 h-6 rounded-full bg-gradient-to-b from-cyan-400 to-blue-500" />
+          <TrendingUp className="w-5 h-5 text-blue-500" />
+          <h2 className="text-lg font-bold text-[#1e1b4b]">学习进度概览</h2>
+        </div>
         <div className="space-y-4">
           {allModules.map((m) => (
             <ProgressBar
@@ -142,17 +152,21 @@ export default function Profile() {
 
       {/* 练习与测评统计 */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-        <h2 className="text-lg font-bold text-[#1e1b4b] mb-4">练习与测评统计</h2>
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-1.5 h-6 rounded-full bg-gradient-to-b from-amber-400 to-orange-500" />
+          <BarChart3 className="w-5 h-5 text-orange-500" />
+          <h2 className="text-lg font-bold text-[#1e1b4b]">练习与测评统计</h2>
+        </div>
         <div className="grid grid-cols-2 gap-4 mb-4">
-          <div className="text-center p-4 bg-gray-50 rounded-xl">
-            <p className="text-sm text-gray-500 mb-1">已通过练习</p>
-            <p className="text-2xl font-bold text-[#10b981]">
+          <div className="text-center p-4 rounded-xl bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-100">
+            <p className="text-sm text-emerald-600 mb-1">已通过练习</p>
+            <p className="text-2xl font-bold bg-gradient-to-r from-emerald-500 to-teal-500 bg-clip-text text-transparent">
               {passedExercises}<span className="text-base font-normal text-gray-400"> / {totalExercises}</span>
             </p>
           </div>
-          <div className="text-center p-4 bg-gray-50 rounded-xl">
-            <p className="text-sm text-gray-500 mb-1">测评通过率</p>
-            <p className="text-2xl font-bold text-[#f59e0b]">{quizPassRate}%</p>
+          <div className="text-center p-4 rounded-xl bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-100">
+            <p className="text-sm text-amber-600 mb-1">测评通过率</p>
+            <p className="text-2xl font-bold bg-gradient-to-r from-amber-500 to-orange-500 bg-clip-text text-transparent">{quizPassRate}%</p>
           </div>
         </div>
         {bestScores.length > 0 && (
@@ -160,9 +174,9 @@ export default function Profile() {
             <h3 className="text-sm font-semibold text-gray-600 mb-2">测评最高分</h3>
             <div className="space-y-2">
               {bestScores.map((s) => (
-                <div key={s.moduleId} className="flex justify-between items-center py-2 px-3 bg-gray-50 rounded-lg">
+                <div key={s.moduleId} className="flex justify-between items-center py-2 px-3 bg-gradient-to-r from-violet-50 to-purple-50 rounded-lg border border-violet-100">
                   <span className="text-sm text-gray-700">{s.title}</span>
-                  <span className="text-sm font-semibold text-[#10b981]">{s.bestScore}分</span>
+                  <span className="text-sm font-semibold bg-gradient-to-r from-violet-500 to-purple-500 bg-clip-text text-transparent">{s.bestScore}分</span>
                 </div>
               ))}
             </div>
@@ -175,25 +189,29 @@ export default function Profile() {
 
       {/* 数据管理 */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-        <h2 className="text-lg font-bold text-[#1e1b4b] mb-4">数据管理</h2>
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-1.5 h-6 rounded-full bg-gradient-to-b from-indigo-400 to-purple-500" />
+          <Database className="w-5 h-5 text-indigo-500" />
+          <h2 className="text-lg font-bold text-[#1e1b4b]">数据管理</h2>
+        </div>
         <div className="flex flex-wrap gap-3">
           <button
             onClick={handleExport}
-            className="group flex items-center gap-2 px-4 py-2.5 bg-[#1e1b4b] text-white rounded-lg hover:bg-[#1e1b4b]/90 transition-all duration-200 text-sm font-medium hover:-translate-y-0.5 hover:shadow-md"
+            className="group flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-indigo-500 to-violet-500 text-white rounded-lg hover:from-indigo-600 hover:to-violet-600 transition-all duration-200 text-sm font-medium hover:-translate-y-0.5 hover:shadow-md hover:shadow-indigo-200"
           >
             <Download className="w-4 h-4 group-hover:animate-bounce" />
             导出数据
           </button>
           <button
             onClick={handleImport}
-            className="group flex items-center gap-2 px-4 py-2.5 bg-[#f59e0b] text-white rounded-lg hover:bg-[#f59e0b]/90 transition-all duration-200 text-sm font-medium hover:-translate-y-0.5 hover:shadow-md"
+            className="group flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-400 to-orange-400 text-white rounded-lg hover:from-amber-500 hover:to-orange-500 transition-all duration-200 text-sm font-medium hover:-translate-y-0.5 hover:shadow-md hover:shadow-amber-200"
           >
             <Upload className="w-4 h-4 group-hover:animate-bounce" />
             导入数据
           </button>
           <button
             onClick={() => setShowResetConfirm(true)}
-            className="group flex items-center gap-2 px-4 py-2.5 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all duration-200 text-sm font-medium hover:-translate-y-0.5 hover:shadow-md"
+            className="group flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-red-400 to-rose-500 text-white rounded-lg hover:from-red-500 hover:to-rose-600 transition-all duration-200 text-sm font-medium hover:-translate-y-0.5 hover:shadow-md hover:shadow-red-200"
           >
             <Trash2 className="w-4 h-4 group-hover:animate-bounce" />
             重置数据
@@ -207,19 +225,19 @@ export default function Profile() {
           className="hidden"
         />
         {importSuccess && (
-          <p className="mt-3 text-sm text-[#10b981]">导入成功，页面即将刷新…</p>
+          <p className="mt-3 text-sm text-emerald-500 font-medium">✓ 导入成功，页面即将刷新…</p>
         )}
         {importError && (
-          <p className="mt-3 text-sm text-red-500">导入失败，请检查文件格式是否正确。</p>
+          <p className="mt-3 text-sm text-red-500 font-medium">✗ 导入失败，请检查文件格式是否正确。</p>
         )}
       </div>
 
       {/* 重置确认对话框 */}
       {showResetConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full mx-4 animate-slide-up">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full mx-4 animate-slide-up border border-red-100">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-red-100 to-rose-100 flex items-center justify-center">
                 <AlertTriangle className="w-5 h-5 text-red-500" />
               </div>
               <h3 className="text-lg font-bold text-gray-900">确认重置</h3>
@@ -234,7 +252,7 @@ export default function Profile() {
               </button>
               <button
                 onClick={handleReset}
-                className="px-4 py-2 text-sm font-medium text-white bg-red-500 rounded-lg hover:bg-red-600 transition-colors"
+                className="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-red-500 to-rose-500 rounded-lg hover:from-red-600 hover:to-rose-600 transition-all duration-200 hover:shadow-md"
               >
                 确认重置
               </button>

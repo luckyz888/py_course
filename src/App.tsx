@@ -23,10 +23,10 @@ function App() {
           <Route path="practice/:exerciseId" element={<Practice />} />
           <Route path="quiz/:moduleId" element={<Quiz />} />
           <Route path="bootcamp" element={<Bootcamp />} />
-          <Route path="bootcamp/:projectId" element={<BootcampProject />} />
           <Route path="achievements" element={<Achievements />} />
           <Route path="profile" element={<Profile />} />
         </Route>
+        <Route path="bootcamp/:projectId" element={<BootcampProject />} />
       </Routes>
     </BrowserRouter>
   );

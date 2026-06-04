@@ -120,6 +120,7 @@ export interface OutlineItem {
   title: string;
   content: string;       // 详细知识讲解（Markdown格式）
   codeExample: string;   // 代码示例
+  importance?: 'core' | 'important' | 'supplementary';  // 重要程度：核心/重要/补充
 }
 
 // 项目任务

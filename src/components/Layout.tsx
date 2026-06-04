@@ -3,11 +3,11 @@ import { Outlet, NavLink, useLocation } from 'react-router-dom';
 import { Home, BookOpen, Trophy, User, ChevronRight, Menu, X, Code2 } from 'lucide-react';
 
 const navItems = [
-  { to: '/', label: '首页', icon: Home },
-  { to: '/courses', label: '课程中心', icon: BookOpen },
-  { to: '/bootcamp', label: '实战训练营', icon: Code2 },
-  { to: '/achievements', label: '成就中心', icon: Trophy },
-  { to: '/profile', label: '个人中心', icon: User },
+  { to: '/', label: '首页', icon: Home, accent: 'amber', activeBg: 'bg-amber-500/20', activeText: 'text-amber-400', activeBorder: 'from-amber-400 to-yellow-500', iconBg: 'bg-gradient-to-br from-amber-400 to-yellow-500', dotColor: 'bg-amber-400' },
+  { to: '/courses', label: '课程中心', icon: BookOpen, accent: 'emerald', activeBg: 'bg-emerald-500/20', activeText: 'text-emerald-400', activeBorder: 'from-emerald-400 to-green-500', iconBg: 'bg-gradient-to-br from-emerald-400 to-green-500', dotColor: 'bg-emerald-400' },
+  { to: '/bootcamp', label: '实战训练营', icon: Code2, accent: 'violet', activeBg: 'bg-violet-500/20', activeText: 'text-violet-400', activeBorder: 'from-violet-400 to-purple-500', iconBg: 'bg-gradient-to-br from-violet-400 to-purple-500', dotColor: 'bg-violet-400' },
+  { to: '/achievements', label: '成就中心', icon: Trophy, accent: 'rose', activeBg: 'bg-rose-500/20', activeText: 'text-rose-400', activeBorder: 'from-rose-400 to-pink-500', iconBg: 'bg-gradient-to-br from-rose-400 to-pink-500', dotColor: 'bg-rose-400' },
+  { to: '/profile', label: '个人中心', icon: User, accent: 'cyan', activeBg: 'bg-cyan-500/20', activeText: 'text-cyan-400', activeBorder: 'from-cyan-400 to-teal-500', iconBg: 'bg-gradient-to-br from-cyan-400 to-teal-500', dotColor: 'bg-cyan-400' },
 ];
 
 export default function Layout() {
@@ -83,37 +83,49 @@ export default function Layout() {
 
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 z-40 h-full ${sidebarWidth} bg-[#1e1b4b] text-white flex flex-col transition-all duration-300
+        className={`fixed top-0 left-0 z-40 h-full ${sidebarWidth} bg-gradient-to-b from-indigo-900 via-violet-900 to-purple-900 text-white flex flex-col transition-all duration-300
           ${mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}
       >
         {/* Logo */}
         <div className="flex items-center h-16 px-4 border-b border-white/10">
-          <div className="w-8 h-8 rounded-lg bg-[#f59e0b] flex items-center justify-center font-bold text-[#1e1b4b] shrink-0">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center font-bold text-white shrink-0 shadow-lg shadow-amber-500/30">
             D
           </div>
           {!collapsed && (
-            <span className="ml-3 text-lg font-bold whitespace-nowrap">数据分析</span>
+            <span className="ml-3 text-lg font-bold whitespace-nowrap bg-gradient-to-r from-amber-200 to-orange-200 bg-clip-text text-transparent">数据分析</span>
           )}
         </div>
 
         {/* Navigation */}
         <nav className="flex-1 py-4 space-y-1 px-2">
-          {navItems.map(({ to, label, icon: Icon }) => (
+          {navItems.map(({ to, label, icon: Icon, activeBg, activeText, activeBorder, iconBg, dotColor }) => (
             <NavLink
               key={to}
               to={to}
               end={to === '/'}
               onClick={() => setMobileOpen(false)}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group
+                `relative flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group
                 ${isActive
-                  ? 'bg-white/15 text-[#f59e0b]'
+                  ? `${activeBg} ${activeText} border-l-[3px] border-transparent`
                   : 'text-white/70 hover:bg-white/10 hover:text-white'
                 }`
               }
             >
-              <Icon className="w-5 h-5 shrink-0" />
-              {!collapsed && <span className="whitespace-nowrap">{label}</span>}
+              {({ isActive }) => (
+                <>
+                  {isActive && (
+                    <span className={`absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-gradient-to-b ${activeBorder}`} />
+                  )}
+                  <span className={`shrink-0 flex items-center justify-center w-5 h-5 ${isActive ? iconBg + ' rounded-md p-0.5' : ''}`}>
+                    <Icon className={`w-5 h-5 ${isActive ? 'text-white' : ''}`} />
+                  </span>
+                  {!collapsed && <span className="whitespace-nowrap">{label}</span>}
+                  {!isActive && !collapsed && (
+                    <span className={`ml-auto w-1.5 h-1.5 rounded-full ${dotColor} opacity-40 group-hover:opacity-80 transition-opacity duration-200`} />
+                  )}
+                </>
+              )}
             </NavLink>
           ))}
         </nav>
@@ -130,7 +142,8 @@ export default function Layout() {
       {/* Main content */}
       <div className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ${collapsed ? 'md:ml-16' : 'md:ml-60'}`}>
         {/* Top bar */}
-        <header className="sticky top-0 z-20 h-14 bg-white/95 backdrop-blur-sm border-b border-gray-200 flex items-center px-3 sm:px-4 md:px-6">
+        <header className="sticky top-0 z-20 h-14 bg-white/95 backdrop-blur-sm border-b border-gray-200 flex items-center px-3 sm:px-4 md:px-6 relative">
+          <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-indigo-500 via-violet-500 to-purple-500 opacity-40" />
           {/* Mobile menu button */}
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
@@ -145,13 +158,13 @@ export default function Layout() {
               <span key={crumb.to} className="flex items-center min-w-0 shrink-0 last:shrink last:min-w-0">
                 {idx > 0 && <ChevronRight className="w-4 h-4 mx-1 text-gray-400 shrink-0" />}
                 {idx === breadcrumbs.length - 1 ? (
-                  <span className="text-gray-900 font-medium truncate">{crumb.label}</span>
+                  <span className="text-indigo-600 font-medium truncate">{crumb.label}</span>
                 ) : idx === 0 ? (
-                  <NavLink to={crumb.to} className="hover:text-[#1e1b4b] transition-all duration-200 shrink-0">
+                  <NavLink to={crumb.to} className="hover:text-indigo-600 transition-all duration-200 shrink-0">
                     {crumb.label}
                   </NavLink>
                 ) : (
-                  <NavLink to={crumb.to} className="hover:text-[#1e1b4b] transition-all duration-200 hidden sm:block truncate">
+                  <NavLink to={crumb.to} className="hover:text-indigo-600 transition-all duration-200 hidden sm:block truncate">
                     {crumb.label}
                   </NavLink>
                 )}
