@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -34,8 +34,6 @@ export default function BootcampProject() {
     if (!project) return '';
     return store.getCode(project.id) || project.starterCode;
   });
-  const editorRef = useRef<{ run: () => void } | null>(null);
-
   const handleCodeChange = useCallback(
     (code: string) => {
       setEditorCode(code);

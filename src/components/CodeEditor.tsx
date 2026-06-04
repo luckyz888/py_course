@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState } from 'react';
 import Editor from '@monaco-editor/react';
 import { Play, RotateCcw, Loader2 } from 'lucide-react';
 import { runPython, isPyodideLoaded, loadPyodide } from '../utils/pyodide';
