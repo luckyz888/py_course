@@ -325,7 +325,7 @@ export default function Practice() {
         <div className="space-y-4">
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
             <CodeEditor
-              initialCode={
+              code={
                 savedResult?.submittedCode || exercise.initialCode
               }
               onCodeChange={(code) => {

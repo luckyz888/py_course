@@ -86,7 +86,7 @@ export default function LessonPage() {
         {/* Right: Code Editor */}
         {lesson.codeExample && (
           <div className="lg:w-[480px] shrink-0 min-h-[400px]">
-            <CodeEditor initialCode={lesson.codeExample} height="500px" />
+            <CodeEditor code={lesson.codeExample} height="500px" />
           </div>
         )}
       </div>

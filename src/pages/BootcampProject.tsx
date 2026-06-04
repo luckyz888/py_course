@@ -8,7 +8,6 @@ import {
   ChevronDown,
   ChevronRight,
   Play,
-  Database,
   FileCode,
   Lightbulb,
   Upload,
@@ -288,11 +287,6 @@ interface CodingTabProps {
 function CodingTab({ project, code, onCodeChange }: CodingTabProps) {
   const store = useBootcampStore();
 
-  const handleLoadDataset = () => {
-    const newCode = project.datasetCode + '\n\n' + code;
-    onCodeChange(newCode);
-  };
-
   const handleLoadStarterCode = () => {
     onCodeChange(project.starterCode);
   };
@@ -308,34 +302,28 @@ function CodingTab({ project, code, onCodeChange }: CodingTabProps) {
         <span className="font-bold text-gray-900">{project.title}</span>
         <div className="flex gap-2">
           <button
-            onClick={handleLoadDataset}
-            className="flex items-center gap-1 px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
-          >
-            <Database size={14} />
-            加载数据集
-          </button>
-          <button
             onClick={handleLoadStarterCode}
             className="flex items-center gap-1 px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
           >
             <FileCode size={14} />
-            加载起始代码
+            起始代码
           </button>
           <button
             onClick={handleLoadReference}
             className="flex items-center gap-1 px-3 py-1.5 text-sm bg-indigo-900 hover:bg-indigo-800 text-white rounded-lg transition-colors"
           >
             <Lightbulb size={14} />
-            加载参考解答
+            参考解答
           </button>
         </div>
       </div>
 
-      {/* 代码编辑器 */}
+      {/* 代码编辑器 + 运行控制台 */}
       <CodeEditor
-        initialCode={code}
+        code={code}
         onCodeChange={onCodeChange}
-        height="500px"
+        height="400px"
+        datasetCode={project.datasetCode}
       />
 
       {/* 任务列表 */}

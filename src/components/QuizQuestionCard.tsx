@@ -73,7 +73,7 @@ export default function QuizQuestionCard({ question, questionIndex, answer, onAn
 
         {question.type === 'coding' && (
           <CodeEditor
-            initialCode={question.initialCode || ''}
+            code={question.initialCode || ''}
             onCodeChange={onAnswerChange}
             height="300px"
           />
