@@ -12,7 +12,6 @@ import Bootcamp from './pages/Bootcamp';
 import BootcampProject from './pages/BootcampProject';
 import LearningPlan from './pages/LearningPlan';
 import Auth from './pages/Auth';
-import Assignments from './pages/Assignments';
 
 function App() {
   return (
@@ -30,7 +29,6 @@ function App() {
           <Route path="achievements" element={<Achievements />} />
           <Route path="profile" element={<Profile />} />
           <Route path="auth" element={<Auth />} />
-          <Route path="assignments" element={<Assignments />} />
         </Route>
         <Route path="bootcamp/:projectId" element={<BootcampProject />} />
       </Routes>
