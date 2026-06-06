@@ -18,6 +18,7 @@ interface BootcampState {
 
   // AI聊天相关
   addChatMessage: (projectId: string, message: AIChatMessage) => void;
+  updateChatMessage: (projectId: string, messageId: string, content: string) => void;
   getChatHistory: (projectId: string) => AIChatMessage[];
   clearChatHistory: (projectId: string) => void;
 }
@@ -113,6 +114,20 @@ export const useBootcampStore = create<BootcampState>()(
             chatHistories: {
               ...state.chatHistories,
               [projectId]: [...history, message],
+            },
+          };
+        });
+      },
+
+      updateChatMessage: (projectId, messageId, content) => {
+        set((state) => {
+          const history = state.chatHistories[projectId] ?? [];
+          return {
+            chatHistories: {
+              ...state.chatHistories,
+              [projectId]: history.map((msg) =>
+                msg.id === messageId ? { ...msg, content } : msg
+              ),
             },
           };
         });
