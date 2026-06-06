@@ -15,10 +15,21 @@ interface AIFloatingWindowProps {
     userCode?: string;
     error?: string;
   };
+  /** 隐藏默认的右下角触发按钮（由外部提供按钮） */
+  hideTrigger?: boolean;
+  /** 外部控制打开状态 */
+  open?: boolean;
+  /** 打开状态变化回调 */
+  onOpenChange?: (open: boolean) => void;
 }
 
-export default function AIFloatingWindow({ chatId, contextInfo }: AIFloatingWindowProps) {
-  const [isOpen, setIsOpen] = useState(false);
+export default function AIFloatingWindow({ chatId, contextInfo, hideTrigger, open: externalOpen, onOpenChange }: AIFloatingWindowProps) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isOpen = externalOpen !== undefined ? externalOpen : internalOpen;
+  const setIsOpen = (val: boolean) => {
+    setInternalOpen(val);
+    onOpenChange?.(val);
+  };
   const [isMinimized, setIsMinimized] = useState(false);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -193,8 +204,8 @@ export default function AIFloatingWindow({ chatId, contextInfo }: AIFloatingWind
 
   return (
     <>
-      {/* 触发按钮 - 当窗口关闭时显示 */}
-      {!isOpen && (
+      {/* 触发按钮 - 当窗口关闭且未隐藏触发器时显示 */}
+      {!isOpen && !hideTrigger && (
         <button
           onClick={() => { setIsOpen(true); setIsMinimized(false); }}
           className="fixed bottom-6 right-6 flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-full shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:shadow-indigo-500/30 transition-all z-50"
