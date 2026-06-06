@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { Home, BookOpen, Trophy, User, ChevronRight, Menu, X, Code2, LogIn, LogOut } from 'lucide-react';
+import { Home, BookOpen, Trophy, User, ChevronRight, Menu, X, Code2, LogIn, LogOut, MessageSquare } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 
 const navItems = [
   { to: '/', label: '首页', icon: Home, accent: 'amber', activeBg: 'bg-amber-500/20', activeText: 'text-amber-400', activeBorder: 'from-amber-400 to-yellow-500', iconBg: 'bg-gradient-to-br from-amber-400 to-yellow-500', dotColor: 'bg-amber-400' },
   { to: '/courses', label: '课程中心', icon: BookOpen, accent: 'emerald', activeBg: 'bg-emerald-500/20', activeText: 'text-emerald-400', activeBorder: 'from-emerald-400 to-green-500', iconBg: 'bg-gradient-to-br from-emerald-400 to-green-500', dotColor: 'bg-emerald-400' },
   { to: '/bootcamp', label: '实战训练营', icon: Code2, accent: 'violet', activeBg: 'bg-violet-500/20', activeText: 'text-violet-400', activeBorder: 'from-violet-400 to-purple-500', iconBg: 'bg-gradient-to-br from-violet-400 to-purple-500', dotColor: 'bg-violet-400' },
+  { to: '/ai-chat', label: 'AI 助手', icon: MessageSquare, accent: 'indigo', activeBg: 'bg-indigo-500/20', activeText: 'text-indigo-400', activeBorder: 'from-indigo-400 to-blue-500', iconBg: 'bg-gradient-to-br from-indigo-400 to-blue-500', dotColor: 'bg-indigo-400' },
   { to: '/achievements', label: '成就中心', icon: Trophy, accent: 'rose', activeBg: 'bg-rose-500/20', activeText: 'text-rose-400', activeBorder: 'from-rose-400 to-pink-500', iconBg: 'bg-gradient-to-br from-rose-400 to-pink-500', dotColor: 'bg-rose-400' },
   { to: '/profile', label: '个人中心', icon: User, accent: 'cyan', activeBg: 'bg-cyan-500/20', activeText: 'text-cyan-400', activeBorder: 'from-cyan-400 to-teal-500', iconBg: 'bg-gradient-to-br from-cyan-400 to-teal-500', dotColor: 'bg-cyan-400' },
 ];
@@ -70,6 +71,8 @@ export default function Layout() {
       }
     } else if (parts[0] === 'achievements') {
       crumbs.push({ label: '成就中心', to: '/achievements' });
+    } else if (parts[0] === 'ai-chat') {
+      crumbs.push({ label: 'AI 助手', to: '/ai-chat' });
     } else if (parts[0] === 'profile') {
       crumbs.push({ label: '个人中心', to: '/profile' });
     } else if (parts[0] === 'auth') {
