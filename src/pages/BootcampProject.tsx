@@ -406,7 +406,10 @@ function Workspace({ project, code, onCodeChange, showReference, onToggleReferen
   const [aiMinimized, setAiMinimized] = useState(false);
   const [aiInput, setAiInput] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
+  const [aiWidth, setAiWidth] = useState(380);
+  const [aiHeight, setAiHeight] = useState(520);
   const aiMessagesEndRef = useRef<HTMLDivElement>(null);
+  const aiResizeRef = useRef<{ type: string; startX: number; startY: number; startW: number; startH: number } | null>(null);
 
   const chatHistories = useBootcampStore((s) => s.chatHistories);
   const chatHistory = chatHistories[project.id] ?? [];
@@ -548,6 +551,41 @@ function Workspace({ project, code, onCodeChange, showReference, onToggleReferen
     e.preventDefault();
     sendAiMessage(aiInput);
   };
+
+  // AI窗口拖拽调整大小
+  const handleAiResizeStart = useCallback((e: React.MouseEvent, type: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    aiResizeRef.current = { type, startX: e.clientX, startY: e.clientY, startW: aiWidth, startH: aiHeight };
+    document.body.style.cursor = type.includes('e') && type.includes('s') ? 'se-resize'
+      : type.includes('e') ? 'e-resize'
+      : type.includes('s') ? 's-resize'
+      : type.includes('w') && type.includes('s') ? 'sw-resize'
+      : type.includes('w') ? 'w-resize'
+      : 'default';
+    document.body.style.userSelect = 'none';
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const r = aiResizeRef.current;
+      if (!r) return;
+      const dx = e.clientX - r.startX;
+      const dy = e.clientY - r.startY;
+      if (r.type.includes('e')) setAiWidth(Math.max(300, Math.min(r.startW + dx, 700)));
+      if (r.type.includes('s')) setAiHeight(Math.max(350, Math.min(r.startH + dy, 800)));
+      if (r.type.includes('w')) setAiWidth(Math.max(300, Math.min(r.startW - dx, 700)));
+    };
+
+    const handleMouseUp = () => {
+      aiResizeRef.current = null;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  }, [aiWidth, aiHeight]);
 
   const handleLoadReference = () => {
     onCodeChange(project.referenceSolution);
@@ -920,7 +958,10 @@ function Workspace({ project, code, onCodeChange, showReference, onToggleReferen
 
       {/* AI助手浮窗 */}
       {aiOpen && !aiMinimized && (
-        <div className="absolute bottom-4 right-4 w-[380px] h-[520px] bg-white rounded-2xl shadow-2xl shadow-indigo-500/10 border border-gray-200 flex flex-col z-50 overflow-hidden">
+        <div
+          className="absolute bottom-4 right-4 bg-white rounded-2xl shadow-2xl shadow-indigo-500/10 border border-gray-200 flex flex-col z-50 overflow-hidden"
+          style={{ width: aiWidth, height: aiHeight }}
+        >
           {/* 浮窗标题栏 */}
           <div className="flex items-center justify-between px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white shrink-0">
             <div className="flex items-center gap-2">
@@ -1029,6 +1070,38 @@ function Workspace({ project, code, onCodeChange, showReference, onToggleReferen
               <Trash2 size={13} />
             </button>
           </form>
+
+          {/* 右侧调整手柄 */}
+          <div
+            onMouseDown={(e) => handleAiResizeStart(e, 'e')}
+            className="absolute top-0 right-0 bottom-0 w-1.5 cursor-e-resize hover:bg-indigo-300 transition-colors"
+          />
+          {/* 底部调整手柄 */}
+          <div
+            onMouseDown={(e) => handleAiResizeStart(e, 's')}
+            className="absolute left-0 right-0 bottom-0 h-1.5 cursor-s-resize hover:bg-indigo-300 transition-colors"
+          />
+          {/* 右下角调整手柄 */}
+          <div
+            onMouseDown={(e) => handleAiResizeStart(e, 'se')}
+            className="absolute right-0 bottom-0 w-4 h-4 cursor-se-resize"
+          >
+            <svg className="w-4 h-4 text-gray-300 hover:text-indigo-400 transition-colors" viewBox="0 0 16 16" fill="currentColor">
+              <circle cx="12" cy="12" r="1.5" />
+              <circle cx="8" cy="12" r="1.5" />
+              <circle cx="12" cy="8" r="1.5" />
+            </svg>
+          </div>
+          {/* 左侧调整手柄 */}
+          <div
+            onMouseDown={(e) => handleAiResizeStart(e, 'w')}
+            className="absolute top-0 left-0 bottom-0 w-1.5 cursor-w-resize hover:bg-indigo-300 transition-colors"
+          />
+          {/* 左下角调整手柄 */}
+          <div
+            onMouseDown={(e) => handleAiResizeStart(e, 'sw')}
+            className="absolute left-0 bottom-0 w-4 h-4 cursor-sw-resize"
+          />
         </div>
       )}
 
