@@ -42,9 +42,7 @@ export default function CodeEditor({ code, onCodeChange, height = '350px', datas
 
     // Register Python completions for data analysis
     monaco.languages.registerCompletionItemProvider('python', {
-      provideCompletionItems: (model: any, position: any) => {
-        const word = model.getWordUntilPosition(position);
-
+      provideCompletionItems: () => {
         const suggestions = [
           // Pandas
           { label: 'import pandas as pd', kind: monaco.languages.CompletionItemKind.Snippet, insertText: 'import pandas as pd', documentation: '导入Pandas库' },
