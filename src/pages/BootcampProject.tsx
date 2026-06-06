@@ -408,7 +408,8 @@ function Workspace({ project, code, onCodeChange, showReference, onToggleReferen
   const [aiLoading, setAiLoading] = useState(false);
   const aiMessagesEndRef = useRef<HTMLDivElement>(null);
 
-  const chatHistory = useBootcampStore((s) => s.getChatHistory(project.id));
+  const chatHistories = useBootcampStore((s) => s.chatHistories);
+  const chatHistory = chatHistories[project.id] ?? [];
   const addChatMessage = useBootcampStore((s) => s.addChatMessage);
   const updateChatMessage = useBootcampStore((s) => s.updateChatMessage);
   const clearChatHistory = useBootcampStore((s) => s.clearChatHistory);
