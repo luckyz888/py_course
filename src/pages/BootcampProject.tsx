@@ -581,7 +581,7 @@ function Workspace({ project, code, onCodeChange, showReference, onToggleReferen
           theme="vs-dark"
           value={code}
           onChange={(value) => onCodeChange(value || '')}
-          onMount={(editor, monaco) => {
+          onMount={(_editor, monaco) => {
             // 注册 Python 数据分析自动补全
             monaco.languages.registerCompletionItemProvider('python', {
               provideCompletionItems: (model: any, position: any) => {
