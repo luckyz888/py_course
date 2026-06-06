@@ -5,6 +5,7 @@ import { allModules } from '../data/modules';
 import { useCourseStore } from '../stores/courseStore';
 import MarkdownRenderer from '../components/MarkdownRenderer';
 import CodeEditor from '../components/CodeEditor';
+import AIFloatingWindow from '../components/AIFloatingWindow';
 
 export default function LessonPage() {
   const { moduleId, lessonId } = useParams<{ moduleId: string; lessonId: string }>();
@@ -148,6 +149,15 @@ export default function LessonPage() {
           <ArrowRight className="w-4 h-4" />
         </button>
       </div>
+
+      {/* AI助手浮窗 */}
+      <AIFloatingWindow
+        chatId={`lesson-${lessonId}`}
+        contextInfo={{
+          projectTitle: lesson.title,
+          userCode: lesson.codeExample,
+        }}
+      />
     </div>
   );
 }
