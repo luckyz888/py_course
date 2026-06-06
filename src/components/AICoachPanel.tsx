@@ -19,7 +19,8 @@ export default function AICoachPanel({ projectId, projectTitle, currentTask, use
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const chatHistory = useBootcampStore((s) => s.getChatHistory(projectId));
+  const chatHistories = useBootcampStore((s) => s.chatHistories);
+  const chatHistory = chatHistories[projectId] ?? [];
   const addChatMessage = useBootcampStore((s) => s.addChatMessage);
   const updateChatMessage = useBootcampStore((s) => s.updateChatMessage);
   const clearChatHistory = useBootcampStore((s) => s.clearChatHistory);
