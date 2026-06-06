@@ -1,21 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { BookOpen, Trophy, PlayCircle, Flame, CheckCircle2, ArrowRight, Sparkles, Code2, Zap, Layers, Lightbulb, Code, Users, GraduationCap, Briefcase, Target, Calendar, Clock, Rocket, Star, Flag } from 'lucide-react';
+import { BookOpen, Trophy, PlayCircle, Flame, CheckCircle2, ArrowRight, Code2, Zap, Layers, Lightbulb, Code, Users, GraduationCap, Target, Calendar, Clock, Rocket, Star, Flag } from 'lucide-react';
 
 const stats = [
   { value: 6, label: '课程模块', suffix: '', gradient: 'from-indigo-50 to-blue-50', textColor: 'text-indigo-600', subColor: 'text-indigo-400', icon: BookOpen },
   { value: 29, label: '章节', suffix: '', gradient: 'from-emerald-50 to-teal-50', textColor: 'text-emerald-600', subColor: 'text-emerald-400', icon: Layers },
   { value: 100, label: '知识点', suffix: '+', gradient: 'from-amber-50 to-orange-50', textColor: 'text-amber-600', subColor: 'text-amber-400', icon: Lightbulb },
   { value: 50, label: '练习题', suffix: '+', gradient: 'from-rose-50 to-pink-50', textColor: 'text-rose-600', subColor: 'text-rose-400', icon: Code },
-];
-
-const modules = [
-  { id: 'm1', name: 'Python数据分析基础回顾', progress: 0 },
-  { id: 'm2', name: 'Pandas数据处理与分析', progress: 0 },
-  { id: 'm3', name: '数据可视化与商业图表', progress: 0 },
-  { id: 'm4', name: '商务统计分析方法', progress: 0 },
-  { id: 'm5', name: '商务智能与报表自动化', progress: 0 },
-  { id: 'm6', name: '数据挖掘与商务实战', progress: 0 },
 ];
 
 const roadmapModules = [
