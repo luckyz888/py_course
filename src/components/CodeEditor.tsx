@@ -44,12 +44,6 @@ export default function CodeEditor({ code, onCodeChange, height = '350px', datas
     monaco.languages.registerCompletionItemProvider('python', {
       provideCompletionItems: (model: any, position: any) => {
         const word = model.getWordUntilPosition(position);
-        const _range = {
-          startLineNumber: position.lineNumber,
-          endLineNumber: position.lineNumber,
-          startColumn: word.startColumn,
-          endColumn: word.endColumn,
-        };
 
         const suggestions = [
           // Pandas
