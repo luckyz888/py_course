@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, Trash2, Bot, User } from 'lucide-react';
+import { Send, Trash2, Bot, User, Loader2 } from 'lucide-react';
 import { useBootcampStore } from '../stores/bootcampStore';
-import { generateLocalAIResponse, AI_QUICK_ACTIONS, generateId } from '../utils/aiCoach';
+import { AI_QUICK_ACTIONS, generateId } from '../utils/aiCoach';
+import { chatCompletionStream, readStream, AI_COACH_SYSTEM_PROMPT } from '../utils/zhipuAI';
+import type { ChatMessage } from '../utils/zhipuAI';
 import type { AIChatMessage } from '../types';
 
 interface AICoachPanelProps {
@@ -14,10 +16,12 @@ interface AICoachPanelProps {
 
 export default function AICoachPanel({ projectId, projectTitle, currentTask, userCode, error }: AICoachPanelProps) {
   const [input, setInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const chatHistory = useBootcampStore((s) => s.getChatHistory(projectId));
   const addChatMessage = useBootcampStore((s) => s.addChatMessage);
+  const updateChatMessage = useBootcampStore((s) => s.updateChatMessage);
   const clearChatHistory = useBootcampStore((s) => s.clearChatHistory);
 
   // 自动滚动到底部
@@ -25,9 +29,35 @@ export default function AICoachPanel({ projectId, projectTitle, currentTask, use
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatHistory]);
 
-  const sendMessage = (text: string) => {
+  const buildMessages = (userText: string): ChatMessage[] => {
+    const systemMsg: ChatMessage = {
+      role: 'system',
+      content: AI_COACH_SYSTEM_PROMPT,
+    };
+
+    const contextParts: string[] = [];
+    if (projectTitle) contextParts.push(`当前项目：${projectTitle}`);
+    if (currentTask) contextParts.push(`当前任务：${currentTask}`);
+    if (userCode) contextParts.push(`用户代码：\n\`\`\`python\n${userCode}\n\`\`\``);
+    if (error) contextParts.push(`报错信息：${error}`);
+
+    const contextContent = contextParts.length > 0
+      ? `【上下文信息】\n${contextParts.join('\n')}\n\n${userText}`
+      : userText;
+
+    // 取最近10条历史消息作为上下文
+    const recentHistory = chatHistory.slice(-10);
+    const historyMsgs: ChatMessage[] = recentHistory.map((msg) => ({
+      role: msg.role as 'user' | 'assistant',
+      content: msg.content,
+    }));
+
+    return [systemMsg, ...historyMsgs, { role: 'user', content: contextContent }];
+  };
+
+  const sendMessage = async (text: string) => {
     const trimmed = text.trim();
-    if (!trimmed) return;
+    if (!trimmed || isLoading) return;
 
     // 添加用户消息
     const userMsg: AIChatMessage = {
@@ -38,23 +68,44 @@ export default function AICoachPanel({ projectId, projectTitle, currentTask, use
     };
     addChatMessage(projectId, userMsg);
 
-    // 生成AI回复
-    const aiContent = generateLocalAIResponse(trimmed, {
-      projectTitle,
-      currentTask,
-      userCode,
-      error,
-    });
-
+    // 创建AI消息占位
+    const aiMsgId = generateId();
     const aiMsg: AIChatMessage = {
-      id: generateId(),
+      id: aiMsgId,
       role: 'assistant',
-      content: aiContent,
+      content: '',
       timestamp: new Date().toISOString(),
     };
     addChatMessage(projectId, aiMsg);
 
     setInput('');
+    setIsLoading(true);
+
+    try {
+      const messages = buildMessages(trimmed);
+      const stream = await chatCompletionStream(messages);
+      let fullContent = '';
+
+      await readStream(
+        stream,
+        (token) => {
+          fullContent += token;
+          updateChatMessage(projectId, aiMsgId, fullContent);
+        },
+        () => {
+          setIsLoading(false);
+        },
+        (err) => {
+          const errMsg = `抱歉，AI回复出错：${err.message}`;
+          updateChatMessage(projectId, aiMsgId, fullContent || errMsg);
+          setIsLoading(false);
+        }
+      );
+    } catch (err: any) {
+      const errMsg = `请求失败：${err.message || '网络错误，请稍后重试'}`;
+      updateChatMessage(projectId, aiMsgId, errMsg);
+      setIsLoading(false);
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -77,6 +128,7 @@ export default function AICoachPanel({ projectId, projectTitle, currentTask, use
         <div className="flex items-center gap-2">
           <Bot size={20} className="text-indigo-600" />
           <h3 className="font-semibold text-gray-800">AI 陪练教练</h3>
+          <span className="text-[10px] px-1.5 py-0.5 bg-indigo-100 text-indigo-600 rounded-full">GLM</span>
         </div>
         <button
           onClick={handleClear}
@@ -93,7 +145,8 @@ export default function AICoachPanel({ projectId, projectTitle, currentTask, use
           <button
             key={action.id}
             onClick={() => handleQuickAction(action.prompt)}
-            className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-indigo-50 hover:text-indigo-700 rounded-full transition-colors"
+            disabled={isLoading}
+            className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-indigo-50 hover:text-indigo-700 rounded-full transition-colors disabled:opacity-50"
           >
             <span>{action.icon}</span>
             {action.label}
@@ -107,7 +160,7 @@ export default function AICoachPanel({ projectId, projectTitle, currentTask, use
           <div className="text-center text-sm text-gray-400 mt-8">
             <Bot size={32} className="mx-auto mb-2 text-gray-300" />
             <p>有问题随时问我</p>
-            <p className="mt-1">我会引导你自己思考，而不是直接给答案</p>
+            <p className="mt-1">由智谱GLM大模型驱动</p>
           </div>
         )}
         {chatHistory.map((msg) => (
@@ -133,7 +186,12 @@ export default function AICoachPanel({ projectId, projectTitle, currentTask, use
                   : 'bg-amber-50 text-gray-800 rounded-tr-none'
               }`}
             >
-              {msg.content}
+              {msg.content || (
+                <span className="inline-flex items-center gap-1 text-gray-400">
+                  <Loader2 size={12} className="animate-spin" />
+                  思考中...
+                </span>
+              )}
             </div>
           </div>
         ))}
@@ -146,15 +204,16 @@ export default function AICoachPanel({ projectId, projectTitle, currentTask, use
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="输入你的问题..."
-          className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-300"
+          placeholder={isLoading ? 'AI正在回复...' : '输入你的问题...'}
+          disabled={isLoading}
+          className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-300 disabled:bg-gray-50"
         />
         <button
           type="submit"
-          disabled={!input.trim()}
+          disabled={!input.trim() || isLoading}
           className="p-2 text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg transition-colors"
         >
-          <Send size={16} />
+          {isLoading ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
         </button>
       </form>
     </div>
