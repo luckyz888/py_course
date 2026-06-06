@@ -17,9 +17,19 @@ import {
   ClipboardCheck,
   Upload,
   FileSpreadsheet,
+  MessageSquare,
+  Minimize2,
+  Send,
+  Bot,
+  User,
+  Trash2,
 } from 'lucide-react';
 import { bootcampProjects } from '../data/bootcamp';
 import { useBootcampStore } from '../stores/bootcampStore';
+import { AI_QUICK_ACTIONS, generateId } from '../utils/aiCoach';
+import { chatCompletionStream, readStream, AI_COACH_SYSTEM_PROMPT } from '../utils/zhipuAI';
+import type { ChatMessage } from '../utils/zhipuAI';
+import type { AIChatMessage } from '../types';
 import Editor from '@monaco-editor/react';
 import { runPython, isPyodideLoaded, loadPyodide, onStatusChange } from '../utils/pyodide';
 import MarkdownRenderer from '../components/MarkdownRenderer';
@@ -160,6 +170,136 @@ export default function BootcampProject() {
           />
         </div>
       </div>
+
+      {/* AI助手浮窗 */}
+      {aiOpen && !aiMinimized && (
+        <div className="absolute bottom-4 right-4 w-[380px] h-[520px] bg-white rounded-2xl shadow-2xl shadow-indigo-500/10 border border-gray-200 flex flex-col z-50 overflow-hidden">
+          {/* 浮窗标题栏 */}
+          <div className="flex items-center justify-between px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white shrink-0">
+            <div className="flex items-center gap-2">
+              <Bot size={16} />
+              <span className="text-sm font-semibold">AI 助手</span>
+              <span className="text-[9px] px-1.5 py-0.5 bg-white/20 rounded-full">GLM</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setAiMinimized(true)}
+                className="p-1 hover:bg-white/20 rounded transition-colors"
+                title="最小化"
+              >
+                <Minimize2 size={14} />
+              </button>
+              <button
+                onClick={() => setAiOpen(false)}
+                className="p-1 hover:bg-white/20 rounded transition-colors"
+                title="关闭"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          </div>
+
+          {/* 快捷操作 */}
+          <div className="flex flex-wrap gap-1.5 px-3 py-2 border-b border-gray-100 shrink-0">
+            {AI_QUICK_ACTIONS.map((action) => (
+              <button
+                key={action.id}
+                onClick={() => sendAiMessage(action.prompt)}
+                disabled={aiLoading}
+                className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-gray-600 bg-gray-100 hover:bg-indigo-50 hover:text-indigo-700 rounded-full transition-colors disabled:opacity-50"
+              >
+                <span>{action.icon}</span>
+                {action.label}
+              </button>
+            ))}
+          </div>
+
+          {/* 聊天消息列表 */}
+          <div className="flex-1 overflow-y-auto px-3 py-2 space-y-2.5 min-h-0">
+            {chatHistory.length === 0 && (
+              <div className="text-center text-sm text-gray-400 mt-10">
+                <Bot size={28} className="mx-auto mb-2 text-gray-300" />
+                <p>有问题随时问我</p>
+                <p className="mt-1 text-xs">由智谱GLM大模型驱动</p>
+              </div>
+            )}
+            {chatHistory.map((msg) => (
+              <div
+                key={msg.id}
+                className={`flex gap-2 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
+              >
+                <div
+                  className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[10px] ${
+                    msg.role === 'assistant'
+                      ? 'bg-indigo-100 text-indigo-600'
+                      : 'bg-amber-100 text-amber-600'
+                  }`}
+                >
+                  {msg.role === 'assistant' ? <Bot size={12} /> : <User size={12} />}
+                </div>
+                <div
+                  className={`max-w-[85%] px-2.5 py-1.5 rounded-lg text-xs whitespace-pre-wrap leading-relaxed ${
+                    msg.role === 'assistant'
+                      ? 'bg-indigo-50 text-gray-800 rounded-tl-none'
+                      : 'bg-amber-50 text-gray-800 rounded-tr-none'
+                  }`}
+                >
+                  {msg.content || (
+                    <span className="inline-flex items-center gap-1 text-gray-400">
+                      <Loader2 size={10} className="animate-spin" />
+                      思考中...
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+            <div ref={aiMessagesEndRef} />
+          </div>
+
+          {/* 底部输入框 */}
+          <form onSubmit={handleAiSubmit} className="flex items-center gap-2 px-3 py-2 border-t border-gray-200 shrink-0">
+            <input
+              type="text"
+              value={aiInput}
+              onChange={(e) => setAiInput(e.target.value)}
+              placeholder={aiLoading ? 'AI正在回复...' : '输入问题...'}
+              disabled={aiLoading}
+              className="flex-1 px-2.5 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-300 disabled:bg-gray-50"
+            />
+            <button
+              type="submit"
+              disabled={!aiInput.trim() || aiLoading}
+              className="p-1.5 text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg transition-colors"
+            >
+              {aiLoading ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}
+            </button>
+            <button
+              type="button"
+              onClick={() => clearChatHistory(project.id)}
+              className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+              title="清空记录"
+            >
+              <Trash2 size={13} />
+            </button>
+          </form>
+        </div>
+      )}
+
+      {/* AI助手最小化气泡 */}
+      {aiOpen && aiMinimized && (
+        <button
+          onClick={() => setAiMinimized(false)}
+          className="absolute bottom-4 right-4 flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-full shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:shadow-indigo-500/30 transition-all z-50 group"
+        >
+          <Bot size={16} />
+          <span className="text-sm font-medium">AI助手</span>
+          {chatHistory.length > 0 && (
+            <span className="flex items-center justify-center w-5 h-5 bg-white/25 rounded-full text-[10px] font-bold">
+              {chatHistory.length}
+            </span>
+          )}
+        </button>
+      )}
     </div>
   );
 }
@@ -391,6 +531,22 @@ function Workspace({ project, code, onCodeChange, showReference, onToggleReferen
   const isVDragging = useRef(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // AI助手浮窗状态
+  const [aiOpen, setAiOpen] = useState(false);
+  const [aiMinimized, setAiMinimized] = useState(false);
+  const [aiInput, setAiInput] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
+  const aiMessagesEndRef = useRef<HTMLDivElement>(null);
+
+  const chatHistory = useBootcampStore((s) => s.getChatHistory(project.id));
+  const addChatMessage = useBootcampStore((s) => s.addChatMessage);
+  const updateChatMessage = useBootcampStore((s) => s.updateChatMessage);
+  const clearChatHistory = useBootcampStore((s) => s.clearChatHistory);
+
+  useEffect(() => {
+    aiMessagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [chatHistory]);
+
   // 监听 Pyodide 加载状态
   useEffect(() => {
     const cleanup = onStatusChange((status) => {
@@ -444,6 +600,82 @@ function Workspace({ project, code, onCodeChange, showReference, onToggleReferen
     setOutput('');
     setError(null);
     setImages([]);
+  };
+
+  // AI助手：构建消息上下文
+  const buildAiMessages = (userText: string): ChatMessage[] => {
+    const contextParts: string[] = [];
+    if (project.title) contextParts.push(`当前项目：${project.title}`);
+    if (code) contextParts.push(`用户代码：\n\`\`\`python\n${code.slice(-1500)}\n\`\`\``);
+    if (error) contextParts.push(`报错信息：${error}`);
+
+    const contextContent = contextParts.length > 0
+      ? `【上下文信息】\n${contextParts.join('\n')}\n\n${userText}`
+      : userText;
+
+    const recentHistory = chatHistory.slice(-10);
+    const historyMsgs: ChatMessage[] = recentHistory.map((msg) => ({
+      role: msg.role as 'user' | 'assistant',
+      content: msg.content,
+    }));
+
+    return [
+      { role: 'system', content: AI_COACH_SYSTEM_PROMPT },
+      ...historyMsgs,
+      { role: 'user', content: contextContent },
+    ];
+  };
+
+  // AI助手：发送消息
+  const sendAiMessage = async (text: string) => {
+    const trimmed = text.trim();
+    if (!trimmed || aiLoading) return;
+
+    const userMsg: AIChatMessage = {
+      id: generateId(),
+      role: 'user',
+      content: trimmed,
+      timestamp: new Date().toISOString(),
+    };
+    addChatMessage(project.id, userMsg);
+
+    const aiMsgId = generateId();
+    addChatMessage(project.id, {
+      id: aiMsgId,
+      role: 'assistant',
+      content: '',
+      timestamp: new Date().toISOString(),
+    });
+
+    setAiInput('');
+    setAiLoading(true);
+
+    try {
+      const messages = buildAiMessages(trimmed);
+      const stream = await chatCompletionStream(messages);
+      let fullContent = '';
+
+      await readStream(
+        stream,
+        (token) => {
+          fullContent += token;
+          updateChatMessage(project.id, aiMsgId, fullContent);
+        },
+        () => setAiLoading(false),
+        (err) => {
+          updateChatMessage(project.id, aiMsgId, fullContent || `AI回复出错：${err.message}`);
+          setAiLoading(false);
+        }
+      );
+    } catch (err: any) {
+      updateChatMessage(project.id, aiMsgId, `请求失败：${err.message || '网络错误'}`);
+      setAiLoading(false);
+    }
+  };
+
+  const handleAiSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    sendAiMessage(aiInput);
   };
 
   const handleLoadReference = () => {
@@ -528,7 +760,7 @@ function Workspace({ project, code, onCodeChange, showReference, onToggleReferen
   const hasOutput = output || error || images.length > 0;
 
   return (
-    <div className="flex flex-col h-full" ref={workspaceRef}>
+    <div className="flex flex-col h-full relative" ref={workspaceRef}>
       {/* 工具栏 */}
       <div className="flex items-center justify-between px-3 py-2 bg-gray-800 text-white shrink-0">
         <div className="flex items-center gap-3">
@@ -604,6 +836,16 @@ function Workspace({ project, code, onCodeChange, showReference, onToggleReferen
           >
             {isRunning ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} />}
             {isRunning ? '运行中...' : '运行代码'}
+          </button>
+          {/* AI助手按钮 */}
+          <button
+            onClick={() => { setAiOpen(true); setAiMinimized(false); }}
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded transition-colors ${
+              aiOpen ? 'bg-indigo-500 text-white' : 'bg-indigo-600 hover:bg-indigo-500 text-white'
+            }`}
+          >
+            <MessageSquare size={13} />
+            AI助手
           </button>
         </div>
       </div>
