@@ -14,6 +14,7 @@ import { useExerciseStore } from '../stores/exerciseStore';
 import { runPython, isPyodideLoaded, loadPyodide } from '../utils/pyodide';
 import CodeEditor from '../components/CodeEditor';
 import ExerciseJudge from '../components/ExerciseJudge';
+import AIFloatingWindow from '../components/AIFloatingWindow';
 import type { Exercise, TestCase } from '../types';
 
 interface TestCaseResult {
@@ -365,6 +366,15 @@ export default function Practice() {
           )}
         </div>
       </div>
+
+      {/* AI助手浮窗 */}
+      <AIFloatingWindow
+        chatId={`practice-${exerciseId}`}
+        contextInfo={{
+          projectTitle: context?.lessonTitle,
+          userCode: codeRef.current || exercise?.initialCode,
+        }}
+      />
     </div>
   );
 }
