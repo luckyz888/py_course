@@ -408,8 +408,10 @@ function Workspace({ project, code, onCodeChange, showReference, onToggleReferen
   const [aiLoading, setAiLoading] = useState(false);
   const [aiWidth, setAiWidth] = useState(380);
   const [aiHeight, setAiHeight] = useState(520);
+  const [aiPos, setAiPos] = useState({ x: 0, y: 0 });
   const aiMessagesEndRef = useRef<HTMLDivElement>(null);
   const aiResizeRef = useRef<{ type: string; startX: number; startY: number; startW: number; startH: number } | null>(null);
+  const aiDragRef = useRef<{ startX: number; startY: number; originX: number; originY: number } | null>(null);
 
   const chatHistories = useBootcampStore((s) => s.chatHistories);
   const chatHistory = chatHistories[project.id] ?? [];
@@ -586,6 +588,33 @@ function Workspace({ project, code, onCodeChange, showReference, onToggleReferen
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
   }, [aiWidth, aiHeight]);
+
+  // AI窗口拖拽移动
+  const handleAiDragStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    aiDragRef.current = { startX: e.clientX, startY: e.clientY, originX: aiPos.x, originY: aiPos.y };
+    document.body.style.cursor = 'move';
+    document.body.style.userSelect = 'none';
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const d = aiDragRef.current;
+      if (!d) return;
+      const dx = e.clientX - d.startX;
+      const dy = e.clientY - d.startY;
+      setAiPos({ x: d.originX + dx, y: d.originY + dy });
+    };
+
+    const handleMouseUp = () => {
+      aiDragRef.current = null;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  }, [aiPos.x, aiPos.y]);
 
   const handleLoadReference = () => {
     onCodeChange(project.referenceSolution);
@@ -959,11 +988,14 @@ function Workspace({ project, code, onCodeChange, showReference, onToggleReferen
       {/* AI助手浮窗 */}
       {aiOpen && !aiMinimized && (
         <div
-          className="absolute bottom-4 right-4 bg-white rounded-2xl shadow-2xl shadow-indigo-500/10 border border-gray-200 flex flex-col z-50 overflow-hidden"
-          style={{ width: aiWidth, height: aiHeight }}
+          className="absolute bg-white rounded-2xl shadow-2xl shadow-indigo-500/10 border border-gray-200 flex flex-col z-50 overflow-hidden"
+          style={{ width: aiWidth, height: aiHeight, right: 16 - aiPos.x, bottom: 16 - aiPos.y }}
         >
-          {/* 浮窗标题栏 */}
-          <div className="flex items-center justify-between px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white shrink-0">
+          {/* 浮窗标题栏 - 可拖拽移动 */}
+          <div
+            onMouseDown={handleAiDragStart}
+            className="flex items-center justify-between px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white shrink-0 cursor-move select-none"
+          >
             <div className="flex items-center gap-2">
               <Bot size={16} />
               <span className="text-sm font-semibold">AI 助手</span>
