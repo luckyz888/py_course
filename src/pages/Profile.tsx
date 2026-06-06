@@ -1,9 +1,11 @@
 import { useRef, useState } from 'react';
-import { User, Star, Flame, BookOpen, Download, Upload, Trash2, AlertTriangle, TrendingUp, Award, BarChart3, Database } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { User, Star, Flame, BookOpen, Download, Upload, Trash2, AlertTriangle, TrendingUp, Award, BarChart3, Database, LogIn, Settings, Lock } from 'lucide-react';
 import { useCourseStore } from '../stores/courseStore';
 import { useExerciseStore } from '../stores/exerciseStore';
 import { useQuizStore } from '../stores/quizStore';
 import { useAchievementStore } from '../stores/achievementStore';
+import { useAuthStore } from '../stores/authStore';
 import { allModules } from '../data/modules';
 import { exportAllData, importAllData, resetAllData } from '../utils/dataExport';
 import StatsCard from '../components/StatsCard';
@@ -14,11 +16,19 @@ export default function Profile() {
   const { exerciseResults } = useExerciseStore();
   const { quizResults, getBestScore } = useQuizStore();
   const { points, streak, getLevel } = useAchievementStore();
+  const { isLoggedIn, currentUser, updateProfile, changePassword } = useAuthStore();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [importError, setImportError] = useState(false);
   const [importSuccess, setImportSuccess] = useState(false);
+  const [editingProfile, setEditingProfile] = useState(false);
+  const [editUsername, setEditUsername] = useState('');
+  const [editBio, setEditBio] = useState('');
+  const [changingPassword, setChangingPassword] = useState(false);
+  const [oldPwd, setOldPwd] = useState('');
+  const [newPwd, setNewPwd] = useState('');
+  const [pwdMsg, setPwdMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const level = getLevel();
 
@@ -94,13 +104,46 @@ export default function Profile() {
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-500 via-violet-500 to-purple-500 p-6 shadow-lg">
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDM0djItSDI0di0yaDEyem0wLTRWMjhIMjR2MmgxMnptMC00VjI0SDI0djJoMTJ6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-30" />
         <div className="relative flex items-center gap-4">
-          <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center ring-2 ring-white/30">
-            <User className="w-8 h-8 text-white" />
+          <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center ring-2 ring-white/30 text-3xl">
+            {isLoggedIn && currentUser ? currentUser.avatar : <User className="w-8 h-8 text-white" />}
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-white">个人中心</h1>
-            <p className="text-sm text-white/70 mt-0.5">追踪你的学习旅程</p>
+          <div className="flex-1">
+            {isLoggedIn && currentUser ? (
+              <>
+                <h1 className="text-2xl font-bold text-white">{currentUser.username}</h1>
+                <p className="text-sm text-white/70 mt-0.5">{currentUser.bio || currentUser.email}</p>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="px-2 py-0.5 bg-white/20 rounded-full text-xs text-white/80">
+                    {currentUser.loginType === 'local' ? '邮箱注册' : currentUser.loginType === 'wechat' ? '微信登录' : 'GitHub登录'}
+                  </span>
+                </div>
+              </>
+            ) : (
+              <>
+                <h1 className="text-2xl font-bold text-white">个人中心</h1>
+                <p className="text-sm text-white/70 mt-0.5">登录后可同步学习进度</p>
+                <Link to="/auth" className="inline-flex items-center gap-1 mt-2 px-3 py-1 bg-white/20 rounded-full text-xs text-white hover:bg-white/30 transition-colors">
+                  <LogIn className="w-3 h-3" /> 登录 / 注册
+                </Link>
+              </>
+            )}
           </div>
+          {isLoggedIn && currentUser && (
+            <div className="flex gap-2">
+              <button
+                onClick={() => { setEditUsername(currentUser.username); setEditBio(currentUser.bio); setEditingProfile(true); }}
+                className="p-2 bg-white/20 rounded-lg hover:bg-white/30 transition-colors"
+              >
+                <Settings className="w-5 h-5 text-white" />
+              </button>
+              <button
+                onClick={() => { setChangingPassword(true); setPwdMsg(null); }}
+                className="p-2 bg-white/20 rounded-lg hover:bg-white/30 transition-colors"
+              >
+                <Lock className="w-5 h-5 text-white" />
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -231,6 +274,58 @@ export default function Profile() {
           <p className="mt-3 text-sm text-red-500 font-medium">✗ 导入失败，请检查文件格式是否正确。</p>
         )}
       </div>
+
+      {/* 编辑资料对话框 */}
+      {editingProfile && currentUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full mx-4 animate-slide-up border border-gray-100">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">编辑资料</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">用户名</label>
+                <input type="text" value={editUsername} onChange={e => setEditUsername(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">个人简介</label>
+                <textarea value={editBio} onChange={e => setEditBio(e.target.value)} rows={3}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none resize-none" />
+              </div>
+            </div>
+            <div className="flex gap-3 justify-end mt-6">
+              <button onClick={() => setEditingProfile(false)} className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">取消</button>
+              <button onClick={() => { updateProfile({ username: editUsername, bio: editBio }); setEditingProfile(false); }}
+                className="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-emerald-500 to-teal-500 rounded-lg hover:shadow-md transition-all">保存</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 修改密码对话框 */}
+      {changingPassword && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full mx-4 animate-slide-up border border-gray-100">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">修改密码</h3>
+            {pwdMsg && (
+              <div className={`mb-3 px-3 py-2 rounded-lg text-sm ${pwdMsg.type === 'success' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>{pwdMsg.text}</div>
+            )}
+            <div className="space-y-3">
+              <input type="password" value={oldPwd} onChange={e => setOldPwd(e.target.value)} placeholder="原密码"
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none" />
+              <input type="password" value={newPwd} onChange={e => setNewPwd(e.target.value)} placeholder="新密码（至少6位）"
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none" />
+            </div>
+            <div className="flex gap-3 justify-end mt-6">
+              <button onClick={() => setChangingPassword(false)} className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">取消</button>
+              <button onClick={() => {
+                const result = changePassword(oldPwd, newPwd);
+                setPwdMsg({ type: result.success ? 'success' : 'error', text: result.message });
+                if (result.success) setTimeout(() => setChangingPassword(false), 1000);
+              }} className="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-amber-500 to-orange-500 rounded-lg hover:shadow-md transition-all">确认修改</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 重置确认对话框 */}
       {showResetConfirm && (
