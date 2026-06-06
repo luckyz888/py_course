@@ -8,6 +8,7 @@ import {
   Loader2,
   Code,
   PartyPopper,
+  MessageSquare,
 } from 'lucide-react';
 import { allModules } from '../data/modules';
 import { useExerciseStore } from '../stores/exerciseStore';
@@ -72,6 +73,7 @@ export default function Practice() {
   );
   const [isJudging, setIsJudging] = useState(false);
   const [resultAnimation, setResultAnimation] = useState<'pass' | 'fail' | null>(null);
+  const [aiOpen, setAiOpen] = useState(false);
   const codeRef = useRef('');
 
   const alreadyPassed = exerciseId ? isExercisePassed(exerciseId) : false;
@@ -336,24 +338,35 @@ export default function Practice() {
             />
           </div>
 
-          {/* 提交评判按钮 */}
-          <button
-            onClick={handleSubmit}
-            disabled={isJudging}
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 text-white bg-[#f59e0b] hover:bg-[#f59e0b]/90 disabled:opacity-50 rounded-xl font-medium transition-colors"
-          >
-            {isJudging ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                评判中...
-              </>
-            ) : (
-              <>
-                <Send className="w-4 h-4" />
-                提交评判
-              </>
-            )}
-          </button>
+          {/* 提交评判 + AI助手按钮 */}
+          <div className="flex gap-3">
+            <button
+              onClick={handleSubmit}
+              disabled={isJudging}
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 text-white bg-[#f59e0b] hover:bg-[#f59e0b]/90 disabled:opacity-50 rounded-xl font-medium transition-colors"
+            >
+              {isJudging ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  评判中...
+                </>
+              ) : (
+                <>
+                  <Send className="w-4 h-4" />
+                  提交评判
+                </>
+              )}
+            </button>
+            <button
+              onClick={() => setAiOpen(true)}
+              className={`flex items-center gap-1.5 px-4 py-3 text-sm font-semibold rounded-xl transition-colors shrink-0 ${
+                aiOpen ? 'bg-indigo-500 text-white' : 'bg-indigo-600 hover:bg-indigo-500 text-white'
+              }`}
+            >
+              <MessageSquare size={16} />
+              AI助手
+            </button>
+          </div>
 
           {/* 评判结果 with animation */}
           {judgeResults && (
@@ -370,6 +383,9 @@ export default function Practice() {
       {/* AI助手浮窗 */}
       <AIFloatingWindow
         chatId={`practice-${exerciseId}`}
+        hideTrigger
+        open={aiOpen}
+        onOpenChange={setAiOpen}
         contextInfo={{
           projectTitle: context?.lessonTitle,
           userCode: codeRef.current || exercise?.initialCode,
