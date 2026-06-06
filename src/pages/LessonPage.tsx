@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ChevronRight, CheckCircle, ArrowLeft, ArrowRight, Play } from 'lucide-react';
+import { ChevronRight, CheckCircle, ArrowLeft, ArrowRight, Play, MessageSquare } from 'lucide-react';
 import { allModules } from '../data/modules';
 import { useCourseStore } from '../stores/courseStore';
 import MarkdownRenderer from '../components/MarkdownRenderer';
@@ -13,6 +13,7 @@ export default function LessonPage() {
   const isLessonComplete = useCourseStore((s) => s.isLessonComplete);
   const markLessonComplete = useCourseStore((s) => s.markLessonComplete);
   const [justMarked, setJustMarked] = useState(false);
+  const [aiOpen, setAiOpen] = useState(false);
 
   const { mod, chapter, lesson, prevLesson, nextLesson } = useMemo(() => {
     const m = allModules.find((m) => m.id === moduleId);
@@ -87,6 +88,17 @@ export default function LessonPage() {
         {/* Right: Code Editor */}
         {lesson.codeExample && (
           <div className="lg:w-[480px] shrink-0 min-h-[400px]">
+            <div className="flex items-center justify-end mb-2">
+              <button
+                onClick={() => setAiOpen(true)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
+                  aiOpen ? 'bg-indigo-500 text-white' : 'bg-indigo-600 hover:bg-indigo-500 text-white'
+                }`}
+              >
+                <MessageSquare size={13} />
+                AI助手
+              </button>
+            </div>
             <CodeEditor code={lesson.codeExample} height="500px" />
           </div>
         )}
@@ -153,6 +165,9 @@ export default function LessonPage() {
       {/* AI助手浮窗 */}
       <AIFloatingWindow
         chatId={`lesson-${lessonId}`}
+        hideTrigger
+        open={aiOpen}
+        onOpenChange={setAiOpen}
         contextInfo={{
           projectTitle: lesson.title,
           userCode: lesson.codeExample,
