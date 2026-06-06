@@ -10,6 +10,7 @@ import Achievements from './pages/Achievements';
 import Profile from './pages/Profile';
 import Bootcamp from './pages/Bootcamp';
 import BootcampProject from './pages/BootcampProject';
+import LearningPlan from './pages/LearningPlan';
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
           <Route path="practice/:exerciseId" element={<Practice />} />
           <Route path="quiz/:moduleId" element={<Quiz />} />
           <Route path="bootcamp" element={<Bootcamp />} />
+          <Route path="learning-plan/:moduleId" element={<LearningPlan />} />
           <Route path="achievements" element={<Achievements />} />
           <Route path="profile" element={<Profile />} />
         </Route>

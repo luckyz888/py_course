@@ -581,6 +581,43 @@ function Workspace({ project, code, onCodeChange, showReference, onToggleReferen
           theme="vs-dark"
           value={code}
           onChange={(value) => onCodeChange(value || '')}
+          onMount={(editor, monaco) => {
+            // 注册 Python 数据分析自动补全
+            monaco.languages.registerCompletionItemProvider('python', {
+              provideCompletionItems: (model: any, position: any) => {
+                const word = model.getWordUntilPosition(position);
+                const range = {
+                  startLineNumber: position.lineNumber,
+                  endLineNumber: position.lineNumber,
+                  startColumn: word.startColumn,
+                  endColumn: word.endColumn,
+                };
+                const suggestions = [
+                  { label: 'import pandas as pd', kind: monaco.languages.CompletionItemKind.Snippet, insertText: 'import pandas as pd', range, documentation: '导入Pandas库' },
+                  { label: 'pd.read_csv', kind: monaco.languages.CompletionItemKind.Function, insertText: "pd.read_csv('${1:file}')", insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, range, documentation: '读取CSV文件' },
+                  { label: 'pd.DataFrame', kind: monaco.languages.CompletionItemKind.Class, insertText: 'pd.DataFrame(${1:data})', insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, range, documentation: '创建DataFrame' },
+                  { label: 'df.head', kind: monaco.languages.CompletionItemKind.Method, insertText: 'df.head(${1:5})', insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, range, documentation: '查看前N行' },
+                  { label: 'df.info', kind: monaco.languages.CompletionItemKind.Method, insertText: 'df.info()', range, documentation: '查看数据信息' },
+                  { label: 'df.describe', kind: monaco.languages.CompletionItemKind.Method, insertText: 'df.describe()', range, documentation: '描述性统计' },
+                  { label: 'df.groupby', kind: monaco.languages.CompletionItemKind.Method, insertText: "df.groupby('${1:col}').${2:agg}()", insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, range, documentation: '分组聚合' },
+                  { label: 'df.dropna', kind: monaco.languages.CompletionItemKind.Method, insertText: 'df.dropna()', range, documentation: '删除缺失值' },
+                  { label: 'df.fillna', kind: monaco.languages.CompletionItemKind.Method, insertText: "df.fillna(${1:0})", insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, range, documentation: '填充缺失值' },
+                  { label: 'df.value_counts', kind: monaco.languages.CompletionItemKind.Method, insertText: "df['${1:col}'].value_counts()", insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, range, documentation: '值计数' },
+                  { label: 'df.sort_values', kind: monaco.languages.CompletionItemKind.Method, insertText: "df.sort_values('${1:col}', ascending=${2:False})", insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, range, documentation: '排序' },
+                  { label: 'df.apply', kind: monaco.languages.CompletionItemKind.Method, insertText: "df['${1:col}'].apply(${2:func})", insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, range, documentation: '应用函数' },
+                  { label: 'df.pivot_table', kind: monaco.languages.CompletionItemKind.Method, insertText: "pd.pivot_table(df, values='${1:val}', index='${2:idx}', aggfunc='${3:mean}')", insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, range, documentation: '透视表' },
+                  { label: 'df.merge', kind: monaco.languages.CompletionItemKind.Method, insertText: "pd.merge(${1:df1}, ${2:df2}, on='${3:key}')", insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, range, documentation: '合并DataFrame' },
+                  { label: 'import numpy as np', kind: monaco.languages.CompletionItemKind.Snippet, insertText: 'import numpy as np', range, documentation: '导入NumPy库' },
+                  { label: 'np.mean', kind: monaco.languages.CompletionItemKind.Function, insertText: 'np.mean(${1:data})', insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, range, documentation: '计算均值' },
+                  { label: 'import matplotlib', kind: monaco.languages.CompletionItemKind.Snippet, insertText: "import matplotlib\nmatplotlib.use('Agg')\nimport matplotlib.pyplot as plt", range, documentation: '导入Matplotlib（Agg后端）' },
+                  { label: 'plt.plot', kind: monaco.languages.CompletionItemKind.Function, insertText: "plt.plot(${1:x}, ${2:y})", insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, range, documentation: '折线图' },
+                  { label: 'plt.bar', kind: monaco.languages.CompletionItemKind.Function, insertText: "plt.bar(${1:x}, ${2:height})", insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, range, documentation: '柱状图' },
+                  { label: 'plt.scatter', kind: monaco.languages.CompletionItemKind.Function, insertText: "plt.scatter(${1:x}, ${2:y})", insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, range, documentation: '散点图' },
+                ];
+                return { suggestions };
+              },
+            });
+          }}
           options={{
             minimap: { enabled: false },
             fontSize: 14,
@@ -591,7 +628,26 @@ function Workspace({ project, code, onCodeChange, showReference, onToggleReferen
             wordWrap: 'on',
             padding: { top: 12 },
             suggestOnTriggerCharacters: true,
-            quickSuggestions: true,
+            quickSuggestions: { other: true, comments: false, strings: true },
+            suggest: {
+              showKeywords: true,
+              showSnippets: true,
+              showFunctions: true,
+              showVariables: true,
+              showClasses: true,
+              showModules: true,
+            },
+            parameterHints: { enabled: true },
+            autoIndent: 'full',
+            bracketPairColorization: { enabled: true },
+            guides: { bracketPairs: true, indentation: true },
+            hover: { enabled: true },
+            scrollbar: { verticalScrollbarSize: 8, horizontalScrollbarSize: 8 },
+            cursorBlinking: 'smooth',
+            cursorSmoothCaretAnimation: 'on',
+            smoothScrolling: true,
+            folding: true,
+            foldingStrategy: 'indentation',
           }}
         />
       </div>

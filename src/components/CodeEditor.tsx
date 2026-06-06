@@ -37,8 +37,52 @@ export default function CodeEditor({ code, onCodeChange, height = '350px', datas
     return cleanup;
   }, []);
 
-  const handleEditorMount = (editor: any) => {
+  const handleEditorMount = (editor: any, monaco: any) => {
     editorRef.current = editor;
+
+    // Register Python completions for data analysis
+    monaco.languages.registerCompletionItemProvider('python', {
+      provideCompletionItems: (model: any, position: any) => {
+        const word = model.getWordUntilPosition(position);
+        const range = {
+          startLineNumber: position.lineNumber,
+          endLineNumber: position.lineNumber,
+          startColumn: word.startColumn,
+          endColumn: word.endColumn,
+        };
+
+        const suggestions = [
+          // Pandas
+          { label: 'import pandas as pd', kind: monaco.languages.CompletionItemKind.Snippet, insertText: 'import pandas as pd', documentation: '导入Pandas库' },
+          { label: 'pd.read_csv', kind: monaco.languages.CompletionItemKind.Function, insertText: 'pd.read_csv(${1:filepath})', insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, documentation: '读取CSV文件' },
+          { label: 'pd.DataFrame', kind: monaco.languages.CompletionItemKind.Class, insertText: 'pd.DataFrame(${1:data})', insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, documentation: '创建DataFrame' },
+          { label: 'df.head', kind: monaco.languages.CompletionItemKind.Method, insertText: 'df.head(${1:5})', insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, documentation: '查看前N行' },
+          { label: 'df.info', kind: monaco.languages.CompletionItemKind.Method, insertText: 'df.info()', documentation: '查看数据信息' },
+          { label: 'df.describe', kind: monaco.languages.CompletionItemKind.Method, insertText: 'df.describe()', documentation: '描述性统计' },
+          { label: 'df.groupby', kind: monaco.languages.CompletionItemKind.Method, insertText: "df.groupby('${1:column}').${2:agg}()", insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, documentation: '分组聚合' },
+          { label: 'df.merge', kind: monaco.languages.CompletionItemKind.Method, insertText: "pd.merge(${1:df1}, ${2:df2}, on='${3:key}')", insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, documentation: '合并DataFrame' },
+          { label: 'df.dropna', kind: monaco.languages.CompletionItemKind.Method, insertText: 'df.dropna(${1:subset=[]})', insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, documentation: '删除缺失值' },
+          { label: 'df.fillna', kind: monaco.languages.CompletionItemKind.Method, insertText: "df.fillna(${1:value})", insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, documentation: '填充缺失值' },
+          { label: 'df.value_counts', kind: monaco.languages.CompletionItemKind.Method, insertText: "df['${1:column}'].value_counts()", insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, documentation: '值计数' },
+          { label: 'df.pivot_table', kind: monaco.languages.CompletionItemKind.Method, insertText: "pd.pivot_table(df, values='${1:values}', index='${2:index}', columns='${3:columns}', aggfunc='${4:mean}')", insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, documentation: '透视表' },
+          { label: 'df.apply', kind: monaco.languages.CompletionItemKind.Method, insertText: "df['${1:column}'].apply(${2:func})", insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, documentation: '应用函数' },
+          { label: 'df.sort_values', kind: monaco.languages.CompletionItemKind.Method, insertText: "df.sort_values('${1:column}', ascending=${2:False})", insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, documentation: '排序' },
+          // NumPy
+          { label: 'import numpy as np', kind: monaco.languages.CompletionItemKind.Snippet, insertText: 'import numpy as np', documentation: '导入NumPy库' },
+          { label: 'np.array', kind: monaco.languages.CompletionItemKind.Function, insertText: 'np.array(${1:data})', insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, documentation: '创建数组' },
+          { label: 'np.mean', kind: monaco.languages.CompletionItemKind.Function, insertText: 'np.mean(${1:data})', insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, documentation: '计算均值' },
+          // Matplotlib
+          { label: 'import matplotlib.pyplot as plt', kind: monaco.languages.CompletionItemKind.Snippet, insertText: "import matplotlib\nmatplotlib.use('Agg')\nimport matplotlib.pyplot as plt", documentation: '导入Matplotlib（Agg后端）' },
+          { label: 'plt.plot', kind: monaco.languages.CompletionItemKind.Function, insertText: "plt.plot(${1:x}, ${2:y})", insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, documentation: '折线图' },
+          { label: 'plt.bar', kind: monaco.languages.CompletionItemKind.Function, insertText: "plt.bar(${1:x}, ${2:height})", insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, documentation: '柱状图' },
+          { label: 'plt.scatter', kind: monaco.languages.CompletionItemKind.Function, insertText: "plt.scatter(${1:x}, ${2:y})", insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, documentation: '散点图' },
+          { label: 'plt.hist', kind: monaco.languages.CompletionItemKind.Function, insertText: "plt.hist(${1:data}, bins=${2:10})", insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, documentation: '直方图' },
+          { label: 'plt.figure', kind: monaco.languages.CompletionItemKind.Function, insertText: "plt.figure(figsize=(${1:10}, ${2:6}))", insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, documentation: '创建画布' },
+        ];
+
+        return { suggestions };
+      },
+    });
   };
 
   // 加载 Pyodide
@@ -189,7 +233,42 @@ export default function CodeEditor({ code, onCodeChange, height = '350px', datas
             wordWrap: 'on',
             padding: { top: 12 },
             suggestOnTriggerCharacters: true,
-            quickSuggestions: true,
+            quickSuggestions: {
+              other: true,
+              comments: false,
+              strings: true,
+            },
+            suggest: {
+              showKeywords: true,
+              showSnippets: true,
+              showFunctions: true,
+              showVariables: true,
+              showClasses: true,
+              showModules: true,
+            },
+            acceptSuggestionOnCommitCharacter: true,
+            suggestSelection: 'first',
+            wordBasedSuggestions: 'currentDocument',
+            parameterHints: { enabled: true },
+            autoIndent: 'full',
+            formatOnPaste: true,
+            formatOnType: true,
+            bracketPairColorization: { enabled: true },
+            guides: {
+              bracketPairs: true,
+              indentation: true,
+            },
+            hover: { enabled: true },
+            scrollbar: {
+              verticalScrollbarSize: 8,
+              horizontalScrollbarSize: 8,
+            },
+            cursorBlinking: 'smooth',
+            cursorSmoothCaretAnimation: 'on',
+            smoothScrolling: true,
+            renderWhitespace: 'selection',
+            folding: true,
+            foldingStrategy: 'indentation',
           }}
         />
       </div>

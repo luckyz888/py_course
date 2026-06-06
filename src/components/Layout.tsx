@@ -60,6 +60,11 @@ export default function Layout() {
       if (parts[1]) {
         crumbs.push({ label: '项目详情', to: `/bootcamp/${parts[1]}` });
       }
+    } else if (parts[0] === 'learning-plan') {
+      crumbs.push({ label: '学习规划', to: '/' });
+      if (parts[1]) {
+        crumbs.push({ label: '课程大纲', to: `/learning-plan/${parts[1]}` });
+      }
     } else if (parts[0] === 'achievements') {
       crumbs.push({ label: '成就中心', to: '/achievements' });
     } else if (parts[0] === 'profile') {
@@ -83,16 +88,16 @@ export default function Layout() {
 
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 z-40 h-full ${sidebarWidth} bg-gradient-to-b from-indigo-900 via-violet-900 to-purple-900 text-white flex flex-col transition-all duration-300
+        className={`fixed top-0 left-0 z-40 h-full ${sidebarWidth} bg-[#e7f9f6] text-gray-800 flex flex-col transition-all duration-300
           ${mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}
       >
         {/* Logo */}
-        <div className="flex items-center h-16 px-4 border-b border-white/10">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center font-bold text-white shrink-0 shadow-lg shadow-amber-500/30">
+        <div className="flex items-center h-16 px-4 border-b border-emerald-200">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center font-bold text-white shrink-0 shadow-lg shadow-emerald-500/30">
             D
           </div>
           {!collapsed && (
-            <span className="ml-3 text-lg font-bold whitespace-nowrap bg-gradient-to-r from-amber-200 to-orange-200 bg-clip-text text-transparent">数据分析</span>
+            <span className="ml-3 text-lg font-bold whitespace-nowrap text-emerald-700">数据分析</span>
           )}
         </div>
 
@@ -108,7 +113,7 @@ export default function Layout() {
                 `relative flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group
                 ${isActive
                   ? `${activeBg} ${activeText} border-l-[3px] border-transparent`
-                  : 'text-white/70 hover:bg-white/10 hover:text-white'
+                  : 'text-gray-600 hover:bg-emerald-100 hover:text-gray-800'
                 }`
               }
             >
@@ -133,7 +138,7 @@ export default function Layout() {
         {/* Collapse toggle (desktop only) */}
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="hidden md:flex items-center justify-center h-12 border-t border-white/10 text-white/50 hover:text-white hover:bg-white/5 transition-all duration-200"
+          className="hidden md:flex items-center justify-center h-12 border-t border-emerald-200 text-gray-400 hover:text-gray-600 hover:bg-emerald-100 transition-all duration-200"
         >
           {collapsed ? <Menu className="w-5 h-5" /> : <X className="w-5 h-5" />}
         </button>
