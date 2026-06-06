@@ -12,6 +12,7 @@ import Bootcamp from './pages/Bootcamp';
 import BootcampProject from './pages/BootcampProject';
 import LearningPlan from './pages/LearningPlan';
 import Auth from './pages/Auth';
+import AIChat from './pages/AIChat';
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
           <Route path="bootcamp" element={<Bootcamp />} />
           <Route path="learning-plan/:moduleId" element={<LearningPlan />} />
           <Route path="achievements" element={<Achievements />} />
+          <Route path="ai-chat" element={<AIChat />} />
           <Route path="profile" element={<Profile />} />
           <Route path="auth" element={<Auth />} />
         </Route>
