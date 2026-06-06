@@ -15,6 +15,9 @@ import {
   X,
   Code2,
   ClipboardCheck,
+  Upload,
+  FileSpreadsheet,
+  Zap,
 } from 'lucide-react';
 import { bootcampProjects } from '../data/bootcamp';
 import { useBootcampStore } from '../stores/bootcampStore';
@@ -161,6 +164,27 @@ export default function BootcampProject() {
     </div>
   );
 }
+
+// ==================== 代码模板 ====================
+
+const codeTemplates = [
+  { label: '查看数据前5行', code: 'df.head()' },
+  { label: '查看数据信息', code: 'df.info()' },
+  { label: '描述性统计', code: 'df.describe()' },
+  { label: '查看缺失值', code: "df.isnull().sum()" },
+  { label: '查看数据形状', code: "print(f'行数: {df.shape[0]}, 列数: {df.shape[1]}')" },
+  { label: '列名列表', code: "print(df.columns.tolist())" },
+  { label: '数据类型', code: "print(df.dtypes)" },
+  { label: '删除缺失值', code: "df = df.dropna()\nprint(f'删除后行数: {len(df)}')" },
+  { label: '填充缺失值', code: "df = df.fillna(0)\nprint('缺失值已填充')" },
+  { label: '分组统计', code: "df.groupby(df.columns[0]).size()" },
+  { label: '值计数', code: "df[df.columns[0]].value_counts()" },
+  { label: '排序', code: "df.sort_values(df.columns[0], ascending=False).head(10)" },
+  { label: '柱状图', code: "import matplotlib\nmatplotlib.use('Agg')\nimport matplotlib.pyplot as plt\ndf[df.columns[0]].value_counts().head(10).plot(kind='bar')\nplt.title('Top 10')\nplt.tight_layout()\nplt.show()" },
+  { label: '直方图', code: "import matplotlib\nmatplotlib.use('Agg')\nimport matplotlib.pyplot as plt\ndf[df.select_dtypes(include='number').columns[0]].plot(kind='hist', bins=30)\nplt.title('Distribution')\nplt.tight_layout()\nplt.show()" },
+  { label: '读取上传的CSV', code: "df_uploaded = pd.read_csv('/uploaded_data.csv')\ndf_uploaded.head()" },
+  { label: '读取上传的Excel', code: "df_uploaded = pd.read_excel('/uploaded_data.xlsx')\ndf_uploaded.head()" },
+];
 
 // ==================== 左侧知识点面板 ====================
 
@@ -384,8 +408,11 @@ function Workspace({ project, code, onCodeChange, showReference, onToggleReferen
   const [runCount, setRunCount] = useState(0);
   const [activeBottomTab, setActiveBottomTab] = useState<'output' | 'tasks'>('output');
   const [bottomHeight, setBottomHeight] = useState(240);
+  const [showTemplates, setShowTemplates] = useState(false);
+  const [uploadedFile, setUploadedFile] = useState<string | null>(null);
   const workspaceRef = useRef<HTMLDivElement>(null);
   const isVDragging = useRef(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // 监听 Pyodide 加载状态
   useEffect(() => {
@@ -447,6 +474,42 @@ function Workspace({ project, code, onCodeChange, showReference, onToggleReferen
     onCloseReference();
   };
 
+  // 文件上传处理
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const ext = file.name.split('.').pop()?.toLowerCase();
+    if (!['csv', 'xlsx', 'xls', 'tsv'].includes(ext || '')) {
+      setError('仅支持 CSV / Excel (.xlsx/.xls) / TSV 文件');
+      return;
+    }
+
+    try {
+      if (!isPyodideLoaded()) {
+        setPyodideState('loading');
+        setLoadingStatus('正在加载 Python 环境...');
+        await loadPyodide();
+      }
+
+      const buffer = await file.arrayBuffer();
+      const uint8 = new Uint8Array(buffer);
+
+      // 写入 Pyodide 虚拟文件系统
+      const targetPath = ext === 'csv' || ext === 'tsv' ? '/uploaded_data.csv' : '/uploaded_data.xlsx';
+      (window as any).pyodide.FS.writeFile(targetPath, uint8);
+
+      setUploadedFile(file.name);
+      setActiveBottomTab('output');
+      setOutput(`文件 "${file.name}" 已上传到 ${targetPath}\n可用以下代码读取：\n  df_uploaded = pd.read_csv('${targetPath}')  # CSV\n  df_uploaded = pd.read_excel('${targetPath}')  # Excel`);
+      setError(null);
+    } catch (err: any) {
+      setError('文件上传失败: ' + (err.message || String(err)));
+    }
+
+    e.target.value = '';
+  };
+
   // 垂直拖拽：调节编辑器和输出面板的高度
   const handleVDragStart = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -485,6 +548,14 @@ function Workspace({ project, code, onCodeChange, showReference, onToggleReferen
     return () => window.removeEventListener('keydown', handler);
   }, [handleRun, code]);
 
+  // 点击外部关闭模板下拉
+  useEffect(() => {
+    if (!showTemplates) return;
+    const handler = () => setShowTemplates(false);
+    document.addEventListener('click', handler);
+    return () => document.removeEventListener('click', handler);
+  }, [showTemplates]);
+
   const hasOutput = output || error || images.length > 0;
 
   return (
@@ -516,6 +587,52 @@ function Workspace({ project, code, onCodeChange, showReference, onToggleReferen
           )}
         </div>
         <div className="flex items-center gap-2">
+          {/* 代码模板 */}
+          <div className="relative">
+            <button
+              onClick={() => setShowTemplates(!showTemplates)}
+              className="flex items-center gap-1 px-3 py-1 text-xs bg-gray-700 hover:bg-gray-600 rounded transition-colors"
+            >
+              <Zap size={12} />
+              代码模板
+            </button>
+            {showTemplates && (
+              <div className="absolute right-0 top-full mt-1 w-56 max-h-80 overflow-y-auto bg-gray-800 border border-gray-600 rounded-lg shadow-xl z-50">
+                <div className="p-2 text-xs text-gray-400 border-b border-gray-700">常用数据分析代码片段</div>
+                {codeTemplates.map((tpl, i) => (
+                  <button
+                    key={i}
+                    onClick={() => {
+                      onCodeChange(code + (code.endsWith('\n') ? '' : '\n') + tpl.code + '\n');
+                      setShowTemplates(false);
+                    }}
+                    className="w-full text-left px-3 py-2 text-xs text-gray-300 hover:bg-emerald-600 hover:text-white transition-colors truncate"
+                  >
+                    {tpl.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* 文件上传 */}
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className={`flex items-center gap-1 px-3 py-1 text-xs rounded transition-colors ${
+              uploadedFile ? 'bg-emerald-600 text-white' : 'bg-gray-700 hover:bg-gray-600'
+            }`}
+          >
+            <Upload size={12} />
+            {uploadedFile ? uploadedFile : '上传文件'}
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".csv,.xlsx,.xls,.tsv"
+            onChange={handleFileUpload}
+            className="hidden"
+          />
+
           <button
             onClick={handleReset}
             className="flex items-center gap-1 px-3 py-1 text-xs bg-gray-700 hover:bg-gray-600 rounded transition-colors"
@@ -704,9 +821,15 @@ function Workspace({ project, code, onCodeChange, showReference, onToggleReferen
           {activeBottomTab === 'output' && (
             <div className="p-3">
               {!hasOutput && !isRunning && (
-                <div className="text-sm text-gray-400 flex items-center gap-2 py-4 justify-center">
-                  <Play size={14} />
-                  点击「运行代码」或按 Ctrl+Enter 执行
+                <div className="text-sm text-gray-400 flex flex-col items-center gap-2 py-4">
+                  <div className="flex items-center gap-2">
+                    <Play size={14} />
+                    点击「运行代码」或按 Ctrl+Enter 执行
+                  </div>
+                  <div className="flex items-center gap-2 text-xs">
+                    <FileSpreadsheet size={12} />
+                    支持上传 CSV/Excel 文件，在代码中用 pd.read_csv() 读取
+                  </div>
                 </div>
               )}
               {isRunning && !hasOutput && (
