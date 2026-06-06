@@ -170,136 +170,6 @@ export default function BootcampProject() {
           />
         </div>
       </div>
-
-      {/* AI助手浮窗 */}
-      {aiOpen && !aiMinimized && (
-        <div className="absolute bottom-4 right-4 w-[380px] h-[520px] bg-white rounded-2xl shadow-2xl shadow-indigo-500/10 border border-gray-200 flex flex-col z-50 overflow-hidden">
-          {/* 浮窗标题栏 */}
-          <div className="flex items-center justify-between px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white shrink-0">
-            <div className="flex items-center gap-2">
-              <Bot size={16} />
-              <span className="text-sm font-semibold">AI 助手</span>
-              <span className="text-[9px] px-1.5 py-0.5 bg-white/20 rounded-full">GLM</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => setAiMinimized(true)}
-                className="p-1 hover:bg-white/20 rounded transition-colors"
-                title="最小化"
-              >
-                <Minimize2 size={14} />
-              </button>
-              <button
-                onClick={() => setAiOpen(false)}
-                className="p-1 hover:bg-white/20 rounded transition-colors"
-                title="关闭"
-              >
-                <X size={14} />
-              </button>
-            </div>
-          </div>
-
-          {/* 快捷操作 */}
-          <div className="flex flex-wrap gap-1.5 px-3 py-2 border-b border-gray-100 shrink-0">
-            {AI_QUICK_ACTIONS.map((action) => (
-              <button
-                key={action.id}
-                onClick={() => sendAiMessage(action.prompt)}
-                disabled={aiLoading}
-                className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-gray-600 bg-gray-100 hover:bg-indigo-50 hover:text-indigo-700 rounded-full transition-colors disabled:opacity-50"
-              >
-                <span>{action.icon}</span>
-                {action.label}
-              </button>
-            ))}
-          </div>
-
-          {/* 聊天消息列表 */}
-          <div className="flex-1 overflow-y-auto px-3 py-2 space-y-2.5 min-h-0">
-            {chatHistory.length === 0 && (
-              <div className="text-center text-sm text-gray-400 mt-10">
-                <Bot size={28} className="mx-auto mb-2 text-gray-300" />
-                <p>有问题随时问我</p>
-                <p className="mt-1 text-xs">由智谱GLM大模型驱动</p>
-              </div>
-            )}
-            {chatHistory.map((msg) => (
-              <div
-                key={msg.id}
-                className={`flex gap-2 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
-              >
-                <div
-                  className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[10px] ${
-                    msg.role === 'assistant'
-                      ? 'bg-indigo-100 text-indigo-600'
-                      : 'bg-amber-100 text-amber-600'
-                  }`}
-                >
-                  {msg.role === 'assistant' ? <Bot size={12} /> : <User size={12} />}
-                </div>
-                <div
-                  className={`max-w-[85%] px-2.5 py-1.5 rounded-lg text-xs whitespace-pre-wrap leading-relaxed ${
-                    msg.role === 'assistant'
-                      ? 'bg-indigo-50 text-gray-800 rounded-tl-none'
-                      : 'bg-amber-50 text-gray-800 rounded-tr-none'
-                  }`}
-                >
-                  {msg.content || (
-                    <span className="inline-flex items-center gap-1 text-gray-400">
-                      <Loader2 size={10} className="animate-spin" />
-                      思考中...
-                    </span>
-                  )}
-                </div>
-              </div>
-            ))}
-            <div ref={aiMessagesEndRef} />
-          </div>
-
-          {/* 底部输入框 */}
-          <form onSubmit={handleAiSubmit} className="flex items-center gap-2 px-3 py-2 border-t border-gray-200 shrink-0">
-            <input
-              type="text"
-              value={aiInput}
-              onChange={(e) => setAiInput(e.target.value)}
-              placeholder={aiLoading ? 'AI正在回复...' : '输入问题...'}
-              disabled={aiLoading}
-              className="flex-1 px-2.5 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-300 disabled:bg-gray-50"
-            />
-            <button
-              type="submit"
-              disabled={!aiInput.trim() || aiLoading}
-              className="p-1.5 text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg transition-colors"
-            >
-              {aiLoading ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}
-            </button>
-            <button
-              type="button"
-              onClick={() => clearChatHistory(project.id)}
-              className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-              title="清空记录"
-            >
-              <Trash2 size={13} />
-            </button>
-          </form>
-        </div>
-      )}
-
-      {/* AI助手最小化气泡 */}
-      {aiOpen && aiMinimized && (
-        <button
-          onClick={() => setAiMinimized(false)}
-          className="absolute bottom-4 right-4 flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-full shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:shadow-indigo-500/30 transition-all z-50 group"
-        >
-          <Bot size={16} />
-          <span className="text-sm font-medium">AI助手</span>
-          {chatHistory.length > 0 && (
-            <span className="flex items-center justify-center w-5 h-5 bg-white/25 rounded-full text-[10px] font-bold">
-              {chatHistory.length}
-            </span>
-          )}
-        </button>
-      )}
     </div>
   );
 }
@@ -1046,6 +916,136 @@ function Workspace({ project, code, onCodeChange, showReference, onToggleReferen
           )}
         </div>
       </div>
+
+      {/* AI助手浮窗 */}
+      {aiOpen && !aiMinimized && (
+        <div className="absolute bottom-4 right-4 w-[380px] h-[520px] bg-white rounded-2xl shadow-2xl shadow-indigo-500/10 border border-gray-200 flex flex-col z-50 overflow-hidden">
+          {/* 浮窗标题栏 */}
+          <div className="flex items-center justify-between px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white shrink-0">
+            <div className="flex items-center gap-2">
+              <Bot size={16} />
+              <span className="text-sm font-semibold">AI 助手</span>
+              <span className="text-[9px] px-1.5 py-0.5 bg-white/20 rounded-full">GLM</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setAiMinimized(true)}
+                className="p-1 hover:bg-white/20 rounded transition-colors"
+                title="最小化"
+              >
+                <Minimize2 size={14} />
+              </button>
+              <button
+                onClick={() => setAiOpen(false)}
+                className="p-1 hover:bg-white/20 rounded transition-colors"
+                title="关闭"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          </div>
+
+          {/* 快捷操作 */}
+          <div className="flex flex-wrap gap-1.5 px-3 py-2 border-b border-gray-100 shrink-0">
+            {AI_QUICK_ACTIONS.map((action) => (
+              <button
+                key={action.id}
+                onClick={() => sendAiMessage(action.prompt)}
+                disabled={aiLoading}
+                className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-gray-600 bg-gray-100 hover:bg-indigo-50 hover:text-indigo-700 rounded-full transition-colors disabled:opacity-50"
+              >
+                <span>{action.icon}</span>
+                {action.label}
+              </button>
+            ))}
+          </div>
+
+          {/* 聊天消息列表 */}
+          <div className="flex-1 overflow-y-auto px-3 py-2 space-y-2.5 min-h-0">
+            {chatHistory.length === 0 && (
+              <div className="text-center text-sm text-gray-400 mt-10">
+                <Bot size={28} className="mx-auto mb-2 text-gray-300" />
+                <p>有问题随时问我</p>
+                <p className="mt-1 text-xs">由智谱GLM大模型驱动</p>
+              </div>
+            )}
+            {chatHistory.map((msg) => (
+              <div
+                key={msg.id}
+                className={`flex gap-2 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
+              >
+                <div
+                  className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[10px] ${
+                    msg.role === 'assistant'
+                      ? 'bg-indigo-100 text-indigo-600'
+                      : 'bg-amber-100 text-amber-600'
+                  }`}
+                >
+                  {msg.role === 'assistant' ? <Bot size={12} /> : <User size={12} />}
+                </div>
+                <div
+                  className={`max-w-[85%] px-2.5 py-1.5 rounded-lg text-xs whitespace-pre-wrap leading-relaxed ${
+                    msg.role === 'assistant'
+                      ? 'bg-indigo-50 text-gray-800 rounded-tl-none'
+                      : 'bg-amber-50 text-gray-800 rounded-tr-none'
+                  }`}
+                >
+                  {msg.content || (
+                    <span className="inline-flex items-center gap-1 text-gray-400">
+                      <Loader2 size={10} className="animate-spin" />
+                      思考中...
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+            <div ref={aiMessagesEndRef} />
+          </div>
+
+          {/* 底部输入框 */}
+          <form onSubmit={handleAiSubmit} className="flex items-center gap-2 px-3 py-2 border-t border-gray-200 shrink-0">
+            <input
+              type="text"
+              value={aiInput}
+              onChange={(e) => setAiInput(e.target.value)}
+              placeholder={aiLoading ? 'AI正在回复...' : '输入问题...'}
+              disabled={aiLoading}
+              className="flex-1 px-2.5 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-300 disabled:bg-gray-50"
+            />
+            <button
+              type="submit"
+              disabled={!aiInput.trim() || aiLoading}
+              className="p-1.5 text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg transition-colors"
+            >
+              {aiLoading ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}
+            </button>
+            <button
+              type="button"
+              onClick={() => clearChatHistory(project.id)}
+              className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+              title="清空记录"
+            >
+              <Trash2 size={13} />
+            </button>
+          </form>
+        </div>
+      )}
+
+      {/* AI助手最小化气泡 */}
+      {aiOpen && aiMinimized && (
+        <button
+          onClick={() => setAiMinimized(false)}
+          className="absolute bottom-4 right-4 flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-full shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:shadow-indigo-500/30 transition-all z-50 group"
+        >
+          <Bot size={16} />
+          <span className="text-sm font-medium">AI助手</span>
+          {chatHistory.length > 0 && (
+            <span className="flex items-center justify-center w-5 h-5 bg-white/25 rounded-full text-[10px] font-bold">
+              {chatHistory.length}
+            </span>
+          )}
+        </button>
+      )}
     </div>
   );
 }
